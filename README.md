@@ -60,9 +60,9 @@ ln -s ../TBOT02_build/main main
 
 To run the turtlebot it is necessary to install [ROS2](https://index.ros.org/doc/ros2/), [Gazebo](http://gazebosim.org/tutorials?cat=install) and [TurtleBot3](http://emanual.robotis.com/docs/en/platform/turtlebot3/ros2_simulation/#simulation) on a machine with a GPU and at least 4GB of memory.
 
-[AWS EC2 instance](https://github.com/caiks/TBOT01#readme#AWS)
+[AWS EC2 instance](https://github.com/caiks/TBOT01#AWS)
 
-[Windows 10 WSL2 instance](https://github.com/caiks/TBOT01#readme#Windows)
+[Windows 10 WSL2 instance](https://github.com/caiks/TBOT01#Windows)
 
 [Installation](#Installation)
  
