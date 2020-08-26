@@ -16,17 +16,28 @@ typedef std::chrono::high_resolution_clock clk;
 
 int main(int argc, char **argv)
 {
-	if (true)
+	if (argc >= 3 && string(argv[1]) == "fud_region")
 	{
 		auto uvars = systemsSetVar;
 		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrred = setVarsHistoryRepasReduce_u;
+		auto hrhrred = setVarsHistoryRepasHistoryRepaReduced_u;
+		auto hrpr = setVarsHistoryRepasRed_u;
+		auto prents = histogramRepaRedsListEntropy;
+		auto hrconcat = vectorHistoryRepasConcat_u;
 		auto hrshuffle = historyRepasShuffle_u;
 		auto frvars = fudRepasSetVar;
 		auto frder = fudRepasDerived;
 		auto frund = fudRepasUnderlying;
+		auto llfr = setVariablesListTransformRepasFudRepa_u;
+		auto frmul = historyRepasFudRepasMultiply_up;
+		auto frdep = fudRepasSetVarsDepends;
 		auto layerer = parametersSystemsLayererMaxRollByMExcludedSelfHighestIORepa_up;
 		
-		size_t size = argc >= 2 ? atoi(argv[1]) : 1000;
+		string model = string(argv[2]);
+		size_t size = argc >= 4 ? atoi(argv[3]) : 1000;
+		EVAL(model);
+		EVAL(size);
 				
 		std::unique_ptr<System> uu;
 		std::unique_ptr<SystemRepa> ur;
@@ -71,6 +82,10 @@ int main(int argc, char **argv)
 			hrs = hrshuffle(*hr, (unsigned int)seed);	
 		}
 
+		int d = 0;
+		std::size_t f = 1;
+		size_t tint = 4;
+		
 		std::unique_ptr<FudRepa> fr;
 		std::unique_ptr<DoubleSizeListPairList> mm;
 		try
@@ -83,40 +98,222 @@ int main(int argc, char **argv)
 			size_t mmax = 3;
 			size_t umax = 128;
 			size_t pmax = 1;
-			size_t tint = 4;
-			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, 0, *ur);
+			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, *ur);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));
 		}
 		catch (const std::out_of_range& e)
 		{
 			std::cout << "out of range exception: " << e.what() << std::endl;
-			fr.reset();
-			mm.reset();
+			return 1;
 		}
 		if (!mm || !mm->size())
 		{
 			std::cout << "no fud" << std::endl;
+			return 1;
 		}
-		else
+		// EVAL(mm->size());			
+		// EVAL(mm->back());
+		// EVAL(*mm);
+		auto& a = mm->back().first;
+		auto& kk = mm->back().second;
+		auto m = kk.size();
+		auto z = hr->size;
+		EVAL(m);
+		EVAL(a);			
+		EVAL(z);	
+		EVAL(100.0*(exp(a/z/(m-1))-1.0));
+		EVAL(fudRepasSize(*fr));
+		EVAL(frvars(*fr)->size());
+		EVAL(frder(*fr)->size());
+		EVAL(frund(*fr)->size());
+		EVAL(sorted(*frund(*fr)));
+		
+		auto dr = std::make_unique<ApplicationRepa>();
 		{
-			// EVAL(mm->size());			
-			// EVAL(mm->back());
-			// EVAL(*mm);
-			auto& a = mm->back().first;
-			auto& kk = mm->back().second;
-			auto m = kk.size();
-			auto z = (double)hr->size;
-			EVAL(m);
-			EVAL(a);			
-			EVAL(z);	
-			EVAL(100.0*(exp(a/z/(m-1))-1.0));
-			EVAL(fudRepasSize(*fr));
-			EVAL(frvars(*fr)->size());
-			EVAL(frder(*fr)->size());
-			EVAL(frund(*fr)->size());
-			EVAL(sorted(*frund(*fr)));
+			dr->substrate = vv;
+			dr->fud = std::make_shared<FudRepa>();
+			dr->slices = std::make_shared<SizeTree>();	
+			auto vd = std::make_shared<Variable>(d);
+			auto vl = std::make_shared<Variable>("s");
+			auto vf = std::make_shared<Variable>((int)f);
+			auto vdf = std::make_shared<Variable>(vd, vf);
+			auto vfl = std::make_shared<Variable>(vdf, vl);
+			SizeUSet kk1(kk.begin(), kk.end());
+			SizeUSet vv1(vv.begin(), vv.end());
+			auto gr = llfr(vv1, *frdep(*fr, kk1));
+			auto ar = hrred(1.0, m, kk.data(), *frmul(tint, *hr, *gr));
+			SizeList sl;
+			TransformRepaPtrList ll;
+			std::size_t sz = 1;
+			auto skk = ar->shape;
+			auto rr0 = ar->arr;
+			for (std::size_t i = 0; i < m; i++)
+				sz *= skk[i];
+			sl.reserve(sz);
+			ll.reserve(sz);
+			bool remainder = false;
+			std::size_t b = 1;
+			auto& llu = ur->listVarSizePair;
+			for (std::size_t i = 0; i < sz; i++)
+			{
+				if (rr0[i] <= 0.0)
+				{
+					remainder = true;
+					continue;
+				}
+				auto tr = std::make_shared<TransformRepa>();
+				tr->dimension = m;
+				tr->vectorVar = new std::size_t[m];
+				auto ww = tr->vectorVar;
+				tr->shape = new std::size_t[m];
+				auto sh = tr->shape;
+				for (std::size_t j = 0; j < m; j++)
+				{
+					ww[j] = kk[j];
+					sh[j] = skk[j];
+				}
+				tr->arr = new unsigned char[sz];
+				auto rr = tr->arr;
+				for (std::size_t j = 0; j < sz; j++)
+					rr[j] = 0;
+				rr[i] = 1;
+				tr->valency = 2;
+				auto vb = std::make_shared<Variable>((int)b++);
+				auto vflb = std::make_shared<Variable>(vfl, vb);
+				llu.push_back(VarSizePair(vflb, 2));
+				auto w = llu.size() - 1;
+				tr->derived = w;
+				sl.push_back(w);
+				ll.push_back(tr);
+			}
+			if (remainder)
+			{
+				auto tr = std::make_shared<TransformRepa>();
+				tr->dimension = m;
+				tr->vectorVar = new std::size_t[m];
+				auto ww = tr->vectorVar;
+				tr->shape = new std::size_t[m];
+				auto sh = tr->shape;
+				for (std::size_t j = 0; j < m; j++)
+				{
+					ww[j] = kk[j];
+					sh[j] = skk[j];
+				}
+				tr->arr = new unsigned char[sz];
+				auto rr = tr->arr;
+				for (std::size_t j = 0; j < sz; j++)
+					rr[j] = rr0[j] <= 0.0 ? 1 : 0;
+				tr->valency = 2;
+				auto vb = std::make_shared<Variable>((int)b++);
+				auto vflb = std::make_shared<Variable>(vfl, vb);
+				llu.push_back(VarSizePair(vflb, 2));
+				auto w = llu.size() - 1;
+				tr->derived = w;
+				sl.push_back(w);
+				ll.push_back(tr);
+			}
+			dr->fud->layers.insert(dr->fud->layers.end(), gr->layers.begin(), gr->layers.end());
+			dr->fud->layers.push_back(ll);
+			dr->slices->_list.reserve(sz);
+			for (auto& s : sl)
+				dr->slices->_list.push_back(SizeSizeTreePair(s, std::make_shared<SizeTree>()));			
 		}
+		{
+			EVAL(model+".dr");
+			std::ofstream out(model+".dr", std::ios::binary);
+			systemRepasPersistent(*ur, out); cout << endl;
+			applicationRepasPersistent(*dr, out); cout << endl;
+			out.close();
+		}
+	}
+	
+	if (argc >= 3 && string(argv[1]) == "entropy_region")
+	{
+		auto uvars = systemsSetVar;
+		auto uruu = systemsRepasSystem;
+		auto aall = histogramsList;
+		auto add = pairHistogramsAdd_u;
+		auto ent = histogramsEntropy;
+		auto araa = systemsHistogramRepasHistogram_u;
+		auto hrred = [](const HistoryRepa& hr, const SystemRepa& ur, const VarList& kk)
+		{
+			auto& vvi = ur.mapVarSize();
+			std::size_t m = kk.size();
+			SizeList kk1;
+			for (std::size_t i = 0; i < m; i++)
+				kk1.push_back(vvi[kk[i]]);
+			return setVarsHistoryRepasReduce_u(1.0, m, kk1.data(), hr);
+		};
+		auto hrconcat = vectorHistoryRepasConcat_u;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrpart = systemsHistoryRepasApplicationsHistoryHistoryPartitionedRepa_u;
+		auto frvars = fudRepasSetVar;
+		auto frder = fudRepasDerived;
+		auto frund = fudRepasUnderlying;
+		
+		string model = string(argv[2]);
+		size_t mult = argc >= 4 ? atoi(argv[3]) : 1;
+		string dataset = string(argc >= 5 ? argv[4] : "data002");
+		size_t scale = argc >= 6 ? atoi(argv[5]) : 10;
+		
+		EVAL(model);
+		EVAL(mult);
+		EVAL(dataset);
+
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{	
+			HistoryRepaPtrList ll;
+			int s = 17;
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			for (int i = 0; i < scale; i++)
+			{
+				auto xx = recordListsHistoryRepaRegion(8, 60, s++, *qq);
+				uu = std::move(std::get<0>(xx));
+				ur = std::move(std::get<1>(xx));
+				ll.push_back(std::move(std::get<2>(xx)));
+			}
+			hr = vectorHistoryRepasConcat_u(ll);
+		}
+
+		ECHO(auto z = hr->size);
+		EVAL(z);
+		ECHO(auto v = z * mult);
+		EVAL(v);
+		
+		StrVarPtrMap m;
+		std::ifstream in(model + ".dr", std::ios::binary);
+		auto ur1 = persistentsSystemRepa(in, m);
+		auto dr = persistentsApplicationRepa(in);
+		in.close();
+
+		EVAL(fudRepasSize(*dr->fud));
+		EVAL(frder(*dr->fud)->size());
+		EVAL(frund(*dr->fud)->size());
+		EVAL(treesSize(*dr->slices));
+		EVAL(treesLeafElements(*dr->slices)->size());
+
+		auto hrp = hrpart(*hr, *dr, *ur);
+		uruu(*ur, *uu);
+		auto aa = araa(*uu, *ur, *hrred(*hrp, *ur, VarList{ Variable("partition0"), Variable("partition1") }));
+		EVAL(ent(*aa) * z);
+		
+		HistoryRepaPtrList qq;
+		qq.reserve(mult);
+		for (std::size_t i = 1; i <= mult; i++)
+			qq.push_back(hrshuffle(*hr, (unsigned int)(12345+i*z)));
+		auto hrs = hrconcat(qq);
+		
+		auto hrsp = hrpart(*hrs, *dr, *ur);
+		auto bb = araa(*uu, *ur, *hrred(*hrsp, *ur, VarList{ Variable("partition0"), Variable("partition1") }));
+		EVAL(ent(*bb) * v);
+		
+		EVAL(ent(*add(*aa,*bb)) * (z+v));
+		EVAL(ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v);
 	}
 	
 	return 0;
