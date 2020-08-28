@@ -302,7 +302,7 @@ The accumulated *history* of a dynamic system would eventually use impracticable
 
 In order to minimise the memory required for large *models*, only the current *slice* of past *events* will be *shuffled* and have the *underlying model levels applied* (if necessary) in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the *slice variable* for each of the past *events* and the corresponding inverse map from *slice variable* to its set of *events*. The entire *model* will be *applied* to the current *event* to determine its *slice*. When the current *event* is appended to the past *history* the *slice* list and map will also be updated. When a *slice size* exceeds some threshold the *slice history* will be *modelled* by the *layerer*, and the new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
 
-Now let us consider what the *slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal* and the *likelihood* of each,
+Now let us consider what the *slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
 ```
 cd ~/TBOT02_ws
 
@@ -330,17 +330,17 @@ z: 1000
 ...
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 866003
 
-./main fud_region model040_1000 1000
+./main fud_region model040_9000 9000
 ...
-m: 2
-a: 323.051
-z: 1000
-100.0*(exp(a/z/(m-1))-1.0): 38.1336
+m: 3
+a: 5558.56
+z: 9000
+100.0*(exp(a/z/(m-1))-1.0): 36.1802
 ...
 
-./main entropy_region model040_1000 1 data009
+./main entropy_region model040_9000 1 data009
 ...
-ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 866003
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 891527
 
 ./main fud_region model040_10000 10000
 ...
@@ -403,6 +403,6 @@ Size|Diagonal|Likelihood
 
 The *implied diagonal valency percent* of the root *fud* of *model* 26 of *slice size* 861,505 was also 31.4.
 
-We can see that for this parameterisation of the *fud induction* the optimal *slice size* is around 10,000. Indeed the *liklelihoods* and *implied diagonal* of the smaller *sizes* are all greater than the largest *size*. This is somewhat counter-intuitive, but suggests that dynamic *modelling* might not be at much of a disadvantage, if at all.
+We can see that for this parameterisation of the *fud induction* the optimal *slice size* is around 10,000. Indeed the *likelihoods* and *implied diagonals* of the smaller *sizes* are all greater than for the largest *size*. This is somewhat counter-intuitive, but suggests that dynamic *modelling* might not be at much of a disadvantage, if at all.
 
 Let us simulate the dynamic *modelling* of *model* 26. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
