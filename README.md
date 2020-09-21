@@ -298,9 +298,11 @@ Both `data009` and `model026` have been copied over to the [TBOT02 workspace rep
 
 Now let us consider how we might be able to *induce* a *model* with a similar *likelihood* dynamically, i.e. with *events* streaming in in real time. 
 
-The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory so we will only be able to keep a fixed maximum *size* of past *events* and these will be at the *substrate level*. The current *event* will be appended to the past *history* in sequence until the maximum *size* is reached. 
+The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory so we will only be able to keep a fixed maximum *size* of past *events* and these will be at the *substrate level*. A new *event* will be appended to the past *history* in sequence until the maximum *size* is reached. After that the new *event* will overwrite the oldest *event* using clock arithmetic.
 
-In order to minimise the memory required for large *models*, only the current *slice* of past *events* will be *shuffled* and have the *underlying model levels applied* (if necessary) in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the *slice variable* for each of the past *events* and the corresponding inverse map from *slice variable* to its set of *events*. The entire *model* will be *applied* to the current *event* to determine its *slice*. When the current *event* is appended to the past *history* the *slice* list and map will also be updated. When a *slice size* exceeds some threshold the *slice history* will be *modelled* by the *layerer*, and the new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
+In order to minimise the memory required for large *models*, only a leaf *slice* of past *events* will be *shuffled* and have the *underlying model levels applied* (if necessary) in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the leaf *slice variable* for each of the past *events* and the corresponding inverse map from leaf *slice variable* to its set of *events*. 
+
+When a new *event* arrives, the entire *model* will be *applied* to it to determine its *slice*. The new *event* will be appended to the past *history* and the *slice* list and map will be updated. If the current *slice size* exceeds some threshold the *slice history* will be *modelled* by the *layerer*, and the new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
 
 Now let us consider what the *slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
 ```
@@ -405,4 +407,102 @@ The *implied diagonal valency percent* of the root *fud* of *model* 26 of *slice
 
 We can see that for this parameterisation of the *fud induction* the optimal *slice size* is around 10,000. Indeed the *likelihoods* and *implied diagonals* of the smaller *sizes* are all greater than for the largest *size*. This is somewhat counter-intuitive, but suggests that dynamic *modelling* might not be at much of a disadvantage, if at all.
 
-Let us simulate the dynamic *modelling* of *model* 26. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
+We then *induced* *model* 27 given *underlying model* 26,
+```
+cd ~/TBOT01_ws
+
+./main induce model027 32 >model027.log
+
+./main entropy model027 1 data009
+model: model027
+mult: 1
+dataset: data009
+auto z = hr->size
+z: 172301
+auto v = z * mult
+v: 172301
+fudRepasSize(*dr->fud): 52365
+frder(*dr->fud)->size(): 9746
+frund(*dr->fud)->size(): 360
+treesSize(*dr->slices): 13841
+treesLeafElements(*dr->slices)->size(): 9746
+...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 231911
+
+./main observe data008 model027 data009 location
+...
+100.0*match_count/z: 63.9114
+```
+Now let us consider what the *slice* threshold should be for this *2-level system*,
+```
+cd ~/TBOT02_ws
+
+./main fud model041_100 100
+...
+
+...
+
+./main entropy model041_100 1 data009
+...
+
+./main fud model041_1000 1000
+...
+
+...
+
+./main entropy model041_1000 1 data009
+...
+
+
+./main fud model041_9000 9000
+...
+
+...
+
+./main entropy model041_9000 1 data009
+...
+
+
+./main fud model041_10000 10000
+...
+
+...
+
+./main entropy model041_10000 1 data009
+...
+
+
+./main fud model041_20000 20000
+...
+
+...
+
+./main entropy model041_20000 1 data009
+...
+
+
+./main fud model041_100000 100000
+...
+
+...
+
+./main entropy model041_100000 1 data009
+...
+
+
+./main fud model041_1000000 1000000
+...
+
+...
+
+./main entropy model041_1000000 1 data009
+...
+
+```
+
+Size|Diagonal|Likelihood
+---|---|---
+
+
+
+Let us simulate the dynamic *modelling* of *model* 27. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
