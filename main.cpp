@@ -332,8 +332,16 @@ int main(int argc, char **argv)
 		auto llfr = setVariablesListTransformRepasFudRepa_u;
 		auto frmul = historyRepasFudRepasMultiply_up;
 		auto frdep = fudRepasSetVarsDepends;
-		auto layerer = parametersSystemsLayererMaxRollByMExcludedSelfHighestIORepa_up;
+		auto drcopy = applicationRepasApplicationRepa_u;
+		auto drjoin = applicationRepaPairsJoin_u;
+		auto layerer = parametersSystemsLayererMaxRollByMExcludedSelfHighestLogIORepa_up;
 		
+		auto log = [](const std::string& str)
+		{
+			std::cout << str << std::endl;
+			return;
+		};
+
 		string model = string(argv[2]);
 		size_t size = argc >= 4 ? atoi(argv[3]) : 1000;
 		EVAL(model);
@@ -343,19 +351,13 @@ int main(int argc, char **argv)
 		std::unique_ptr<SystemRepa> ur;
 		std::unique_ptr<HistoryRepa> hr;
 		{
-			HistoryRepaPtrList ll;
-			int s = 17;
 			std::ifstream in("data009.bin", std::ios::binary);
 			auto qq = persistentsRecordList(in);
 			in.close();
-			for (int i = 0; i < 5; i++)
-			{
-				auto xx = recordListsHistoryRepaRegion(8, 60, s++, *qq);
-				uu = std::move(std::get<0>(xx));
-				ur = std::move(std::get<1>(xx));
-				ll.push_back(std::move(std::get<2>(xx)));
-			}
-			hr = vectorHistoryRepasConcat_u(ll);
+			auto xx = recordListsHistoryRepa_2(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
 			if (size < hr->size)
 			{
 				SizeList ev;
@@ -367,24 +369,78 @@ int main(int argc, char **argv)
 		EVAL(hr->size);
 		
 		SizeList vv;		
+		
+		std::shared_ptr<FudRepa> er;
 		{
-			auto vvk = *uvars(*uu);
-			auto& vvi = ur->mapVarSize();
-			auto vvk0 = sorted(vvk);
-			for (auto& v : vvk0)
-				vv.push_back(vvi[v]);			
+			auto dr = std::make_unique<ApplicationRepa>();
+			StrVarPtrMap m;
+			std::ifstream in("model026.dr", std::ios::binary);
+			auto ur1 = persistentsSystemRepa(in, m);
+			auto dr1 = persistentsApplicationRepa(in);
+			in.close();
+			auto& llu1 = ur1->listVarSizePair;
+			VarSizeUMap ur0 = ur->mapVarSize();
+			auto n = fudRepasSize(*dr1->fud);
+			size_t a = 360;
+			size_t b = 60;
+			auto& llu = ur->listVarSizePair;
+			llu.reserve(n*a/b + a);
+			dr->slices = std::make_shared<SizeTree>();
+			dr->slices->_list.reserve(dr1->slices->_list.size() * a / b);
+			dr->fud = std::make_shared<FudRepa>();
+			dr->fud->layers.reserve(dr1->fud->layers.size());
+			dr->substrate.reserve(dr1->substrate.size() * a / b);
+			for (int i = 0; i < a*2/b; i++)
+			{
+				auto dr2 = drcopy(*dr1);
+				SizeSizeUMap nn;
+				nn.reserve(n + b);
+				for (auto x1 : dr1->substrate)
+				{
+					auto& p = llu1[x1];
+					auto v1 = p.first->_var0;
+					auto v2 = std::make_shared<Variable>(((int)(p.first->_var1->_int + i*b/2 - 1)) % a + 1);
+					auto v = std::make_shared<Variable>(v1, v2);
+					nn[x1] = ur0[*v];
+				}
+				auto vk = std::make_shared<Variable>((int)i + 1);
+				for (auto& ll : dr1->fud->layers)
+					for (auto& tr : ll)
+					{
+						auto x1 = tr->derived;
+						auto& p = llu1[x1];
+						auto v = std::make_shared<Variable>(p.first, vk);
+						llu.push_back(VarSizePair(v, p.second));			
+						nn[x1] = llu.size() - 1;
+					}
+				dr2->reframe_u(nn);
+				dr->slices->_list.insert(dr->slices->_list.end(), dr2->slices->_list.begin(), dr2->slices->_list.end());
+				for (std::size_t l = 0; l < dr2->fud->layers.size(); l++)
+				{
+					if (l < dr->fud->layers.size())
+						dr->fud->layers[l].insert(dr->fud->layers[l].end(), dr2->fud->layers[l].begin(), dr2->fud->layers[l].end());
+					else
+						dr->fud->layers.push_back(dr2->fud->layers[l]);
+				}
+				dr->substrate.insert(dr->substrate.end(), dr2->substrate.begin(), dr2->substrate.end());
+			}
+			vv = *treesElements(*dr->slices);
+			er = dr->fud;
 		}
-		EVAL(vv.size());
 
+		EVAL(vv.size());
+		
+		size_t tint = 4;
+		
 		std::unique_ptr<HistoryRepa> hrs;
 		{
 			size_t seed = 5;
-			hrs = hrshuffle(*hr, (unsigned int)seed);	
+			hrs = hrhrred(vv.size(), vv.data(), *frmul(tint, *hrshuffle(*hr, (unsigned int)seed), *er));	
+			hr = hrhrred(vv.size(), vv.data(), *frmul(tint, *hr, *er));
 		}
 
 		int d = 0;
 		std::size_t f = 1;
-		size_t tint = 4;
 		
 		std::unique_ptr<FudRepa> fr;
 		std::unique_ptr<DoubleSizeListPairList> mm;
@@ -398,7 +454,7 @@ int main(int argc, char **argv)
 			size_t mmax = 3;
 			size_t umax = 128;
 			size_t pmax = 1;
-			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, *ur);
+			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, *ur);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));
 		}
