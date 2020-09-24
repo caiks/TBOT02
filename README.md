@@ -439,20 +439,28 @@ cd ~/TBOT02_ws
 
 ./main fud model041_100 100
 ...
-
+m: 4
+a: 91.952
+z: 100
+100.0*(exp(a/z/(m-1))-1.0): 35.867
 ...
 
 ./main entropy model041_100 1 data009
 ...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 15081.6
+
 
 ./main fud model041_1000 1000
 ...
-
+m: 4
+a: 748.269
+z: 1000
+100.0*(exp(a/z/(m-1))-1.0): 28.3285
 ...
 
 ./main entropy model041_1000 1 data009
 ...
-
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 14565
 
 ./main fud model041_9000 9000
 ...
@@ -465,11 +473,15 @@ cd ~/TBOT02_ws
 
 ./main fud model041_10000 10000
 ...
-
+m: 4
+a: 8042.99
+z: 10000
+100.0*(exp(a/z/(m-1))-1.0): 30.7477
 ...
 
 ./main entropy model041_10000 1 data009
 ...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 54620.7
 
 
 ./main fud model041_20000 20000
