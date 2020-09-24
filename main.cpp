@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 		EVAL(ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v);
 	}
 	
-	if (argc >= 3 && string(argv[1]) == "fud")  // TODO
+	if (argc >= 3 && string(argv[1]) == "fud") 
 	{
 		auto uvars = systemsSetVar;
 		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
@@ -429,11 +429,65 @@ int main(int argc, char **argv)
 		EVAL(vv.size());
 		
 		size_t tint = 4;		
+		size_t wmax = 18;
+		size_t lmax = 8;
+		size_t xmax = 128;
+		double znnmax = 60000.0 * 2.0 * 100.0 * 100.0 * 32;
+		size_t omax = 10;
+		size_t bmax = 10 * 3;
+		size_t mmax = 3;
+		size_t umax = 128;
+		size_t pmax = 1;
+		size_t mult = 1;
+		size_t seed = 5;
+	
 		std::unique_ptr<HistoryRepa> hrs;
 		{
-			size_t seed = 5;
-			hrs = hrhrred(vv.size(), vv.data(), *frmul(tint, *hrshuffle(*hr, (unsigned int)seed), *dr0->fud));	
-			hr = hrhrred(vv.size(), vv.data(), *frmul(tint, *hr, *dr0->fud));
+			std::unique_ptr<HistoryRepa> hr1 = hrhrred(vv.size(), vv.data(), *frmul(tint, *hr, *dr0->fud));
+			auto z = hr->size;			
+			auto nmax = (std::size_t)std::sqrt(znnmax / (double)(z + mult*z));	
+			nmax = std::max(nmax, bmax);	
+			EVAL(nmax);				
+			if (nmax < vv.size())
+			{
+				auto ee = prents(*hrpr(vv.size(), vv.data(), *hr1));
+				auto m = ee->size();
+				SizeList vv0;		
+				if (m > nmax)
+				{
+					std::sort(ee->begin(), ee->end());
+					vv0.reserve(nmax);
+					for (std::size_t i = m - nmax; i < m; i++)
+						vv0.push_back((*ee)[i].second);
+				}
+				else
+				{
+					vv0.reserve(m);
+					for (std::size_t i = 0; i < m; i++)
+						vv0.push_back((*ee)[i].second);
+				}
+				if (vv0.size() < vv.size())
+				{
+					vv = vv0;
+					SizeUSet vv00(hr->dimension);
+					for (std::size_t i = 0; i < hr->dimension; i++)
+						vv00.insert(hr->vectorVar[i]);
+					SizeUSet vv01(vv0.begin(), vv0.end());
+					auto er0 = llfr(vv00, *frdep(*dr0->fud, vv01));
+					hrs = hrhrred(vv.size(), vv.data(), *frmul(tint, *hrshuffle(*hr, (unsigned int)seed), *er0));
+					hr = hrhrred(vv.size(), vv.data(), *frmul(tint, *hr, *er0));					
+				}
+				else
+				{
+					hrs = hrhrred(vv.size(), vv.data(), *frmul(tint, *hrshuffle(*hr, (unsigned int)seed), *dr0->fud));
+					hr = std::move(hr1);				
+				}
+			}	
+			else
+			{
+				hrs = hrhrred(vv.size(), vv.data(), *frmul(tint, *hrshuffle(*hr, (unsigned int)seed), *dr0->fud));
+				hr = std::move(hr1);				
+			}
 		}
 
 		int d = 0;
@@ -442,14 +496,7 @@ int main(int argc, char **argv)
 		std::unique_ptr<DoubleSizeListPairList> mm;
 		try
 		{
-			size_t wmax = 18;
-			size_t lmax = 8;
-			size_t xmax = 128;
-			size_t omax = 10;
-			size_t bmax = 10 * 3;
-			size_t mmax = 3;
-			size_t umax = 128;
-			size_t pmax = 1;
+
 			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, *ur);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));

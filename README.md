@@ -449,7 +449,6 @@ z: 100
 ...
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 15081.6
 
-
 ./main fud model041_1000 1000
 ...
 m: 4
@@ -462,15 +461,41 @@ z: 1000
 ...
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 14565
 
-./main fud model041_9000 9000
+./main fud model041_2000 2000
+...
+m: 4
+a: 1647.52
+z: 2000
+100.0*(exp(a/z/(m-1))-1.0): 31.5986
 ...
 
+./main entropy model041_2000 1 data009
+...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 61952.8
+
+./main fud model041_3000 3000
+...
+m: 3
+a: 1615.26
+z: 3000
+100.0*(exp(a/z/(m-1))-1.0): 30.8931
 ...
 
-./main entropy model041_9000 1 data009
+./main entropy model041_3000 1 data009
+...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 61685.9
+
+./main fud model041_5000 5000
+...
+m: 4
+a: 4069.01
+z: 5000
+100.0*(exp(a/z/(m-1))-1.0): 31.1626
 ...
 
-
+./main entropy model041_5000 1 data009
+...
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 53583.5
 ./main fud model041_10000 10000
 ...
 m: 4
@@ -483,38 +508,56 @@ z: 10000
 ...
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 54620.7
 
-
 ./main fud model041_20000 20000
 ...
-
+m: 4
+a: 18897.4
+z: 20000
+100.0*(exp(a/z/(m-1))-1.0): 37.02
 ...
 
 ./main entropy model041_20000 1 data009
 ...
-
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 54580.6
 
 ./main fud model041_100000 100000
 ...
-
+m: 4
+a: 74101.8
+z: 100000
+100.0*(exp(a/z/(m-1))-1.0): 28.0187
 ...
 
 ./main entropy model041_100000 1 data009
 ...
-
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 76387.3
 
 ./main fud model041_1000000 1000000
 ...
-
+m: 4
+a: 142948
+z: 172301
+100.0*(exp(a/z/(m-1))-1.0): 31.8568
 ...
 
 ./main entropy model041_1000000 1 data009
 ...
-
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 76076.7
 ```
 
 Size|Diagonal|Likelihood
 ---|---|---
+100|35.9|15,081
+1,000|28.3|14,565
+2,000|31.6|61,952
+3,000|30.9|61,685
+5,000|31.1|53,583
+10,000|30.7|54,620
+20,000|37.0|54,580
+100,000|28.0|76,387
+172,301|31.9|76,076
 
+We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. However, most of the gain is before 2,000 records so *active modelling* may well generate reasonable *models* with smallish thresholds.
 
 
 Let us simulate the dynamic *modelling* of *model* 27. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
