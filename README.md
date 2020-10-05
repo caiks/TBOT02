@@ -21,12 +21,13 @@ For example, in Ubuntu bionic (18.04),
 sudo apt-get update -y && sudo apt install -y git g++ cmake
 
 ```
-Then download the zip files or use git to get the `TBOT02` repository and the underlying `rapidjson`, `AlignmentC` and `AlignmentRepaC` repositories -
+Then download the zip files or use git to get the `TBOT02` repository and the underlying `rapidjson`, `AlignmentC`, `AlignmentRepaC`and `AlignmentActive`  repositories -
 ```
 cd
 git clone https://github.com/Tencent/rapidjson.git
 git clone https://github.com/caiks/AlignmentC.git
 git clone https://github.com/caiks/AlignmentRepaC.git
+git clone https://github.com/caiks/AlignmentActive.git
 git clone https://github.com/caiks/TBOT02.git
 
 ```
@@ -42,7 +43,7 @@ Then build -
 ```
 cd
 cp TBOT02/CMakeLists_noros.txt TBOT02/CMakeLists.txt
-mkdir TBOT02_build
+mkdir -p TBOT02_build
 cd TBOT02_build
 cmake -DCMAKE_BUILD_TYPE=RELEASE ../TBOT02
 make
@@ -148,6 +149,7 @@ cd ~/turtlebot3_ws/src
 git clone https://github.com/Tencent/rapidjson.git
 git clone https://github.com/caiks/AlignmentC.git
 git clone https://github.com/caiks/AlignmentRepaC.git
+git clone https://github.com/caiks/AlignmentActive.git
 git clone https://github.com/caiks/TBOT02.git
 git clone https://github.com/caiks/TBOT02_ws.git
 
@@ -155,7 +157,7 @@ cd ~/turtlebot3_ws/src/TBOT02_ws
 cat data009a* >data009.bin
 
 cd ~/turtlebot3_ws/src
-mkdir AlignmentC_build AlignmentRepaC_build
+mkdir -p AlignmentC_build AlignmentRepaC_build
 cd ~/turtlebot3_ws/src/AlignmentRepaC_build
 cmake -DCMAKE_BUILD_TYPE=RELEASE ../AlignmentRepaC
 make AlignmentC AlignmentRepaC
@@ -557,7 +559,7 @@ Size|Diagonal|Likelihood
 100,000|28.0|76,387
 172,301|31.9|76,076
 
-We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. However, most of the gain is before 2,000 records so *active modelling* may well generate reasonable *models* with smallish thresholds.
+We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. The reason for this is probably because the *1-level-model* was *modelled* with non-sequential *history* - each  *event* consisted of 60 *scan variables* taken at random from the 360 of the *substrate. The *2-level-model* is *modelled* with sequential *history*, so it is only after around 2,000 records or 8 minutes that all of the rooms havee been visited. *Active modelling* may well generate reasonable *models* with small thresholds of a few hundred *events*.
 
 
 Let us simulate the dynamic *modelling* of *model* 27. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.

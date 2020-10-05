@@ -20,11 +20,11 @@ find_package(turtlebot3 REQUIRED)
 
 find_package (Threads)
 
-include_directories(../rapidjson/include ../AlignmentC ../AlignmentRepaC ../TBOT02)
+include_directories(../rapidjson/include ../AlignmentC ../AlignmentRepaC ../AlignmentActive ../TBOT02)
 
-link_directories(../AlignmentC_build ../AlignmentRepaC_build)
+link_directories(../AlignmentC_build ../AlignmentRepaC_build ../AlignmentActive_build)
 
-link_libraries(libAlignmentRepaC.a libAlignmentC.a)
+link_libraries(libAlignmentActive.a libAlignmentRepaC.a libAlignmentC.a)
 
 set(dependencies "geometry_msgs" "nav_msgs" "rclcpp" "sensor_msgs" "tf2")
 
