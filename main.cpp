@@ -979,7 +979,7 @@ int main(int argc, char **argv)
 			EVAL(derived.size());				
 		}
 		
-		for (std::size_t j = 0; j < z; j++)
+		for (std::size_t j = 0; z <= 1000 && j < z; j++)
 		{
 			auto t0 = clk::now();
 			std::cout << "drmul: " << j 
@@ -989,7 +989,7 @@ int main(int argc, char **argv)
 		
 		std::shared_ptr<HistoryArray> ha = std::move(hsha(*hrhs(*hr)));
 
-		for (std::size_t j = 0; j < z; j++)
+		for (std::size_t j = 0; z <= 1000 && j < z; j++)
 		{
 			auto t0 = clk::now();
 			std::cout << "drmul: " << j 
@@ -997,12 +997,15 @@ int main(int argc, char **argv)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}	
 		
-		auto t1 = clk::now();
-		for (std::size_t j = 0; j < z; j++)
+		for (std::size_t m = 1; m <= 8; m++)
 		{
-			drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,2);		
-		}		
-		std::cout << "Average " << ((sec)(clk::now() - t1)).count()/z << "s" << std::endl;	
+			auto t1 = clk::now();
+			for (std::size_t j = 0; j < z; j++)
+			{
+				drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,m);		
+			}		
+			std::cout << "Average " << m << " " << ((sec)(clk::now() - t1)).count()/z << "s" << std::endl;				
+		}
 	}
 	
 	return 0;
