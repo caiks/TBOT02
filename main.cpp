@@ -902,5 +902,108 @@ int main(int argc, char **argv)
 		active.report();
 	}
 	
+	if (argc >= 3 && string(argv[1]) == "drmul")
+	{
+		auto uvars = systemsSetVar;
+		auto uruu = systemsRepasSystem;
+		auto aall = histogramsList;
+		auto add = pairHistogramsAdd_u;
+		auto ent = histogramsEntropy;
+		auto araa = systemsHistogramRepasHistogram_u;
+		auto hrred = [](const HistoryRepa& hr, const SystemRepa& ur, const VarList& kk)
+		{
+			auto& vvi = ur.mapVarSize();
+			std::size_t m = kk.size();
+			SizeList kk1;
+			for (std::size_t i = 0; i < m; i++)
+				kk1.push_back(vvi[kk[i]]);
+			return setVarsHistoryRepasReduce_u(1.0, m, kk1.data(), hr);
+		};
+		auto hrconcat = vectorHistoryRepasConcat_u;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrpart = systemsHistoryRepasApplicationsHistoryHistoryPartitionedRepa_u;
+		auto frvars = fudRepasSetVar;
+		auto frder = fudRepasDerived;
+		auto frund = fudRepasUnderlying;
+		auto hrhs = historyRepasHistorySparse;
+		auto hshr = historySparsesHistoryRepa;
+		auto hahs = historyArraysHistorySparse;
+		auto hsha = historySparsesHistoryArray;
+		auto erdr = applicationRepasDecompFudSlicedRepa_u;
+		auto drmul = historyRepaPtrListsHistoryArrayPtrListsDecompFudSlicedRepasEventsPathSlice_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data002");
+		size_t size = argc >= 5 ? atoi(argv[4]) : 1;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(size);
+
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::shared_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_2(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+
+		ECHO(auto z = hr->size > size ? size : hr->size);
+		EVAL(z);
+		
+		StrVarPtrMap m;
+		std::ifstream in(model + ".dr", std::ios::binary);
+		auto ur1 = persistentsSystemRepa(in, m);
+		auto er = persistentsApplicationRepa(in);
+		in.close();
+
+		EVAL(fudRepasSize(*er->fud));
+		EVAL(frder(*er->fud)->size());
+		EVAL(frund(*er->fud)->size());
+		EVAL(treesSize(*er->slices));
+		EVAL(treesLeafElements(*er->slices)->size());
+		
+		auto dr = erdr(*er);
+		EVAL(dr->fuds.size());
+		EVAL(dr->fudRepasSize);
+		{
+			std::set<std::size_t> derived;
+			for (auto& fs : dr->fuds)
+				for (auto& tr : fs.fud)
+					derived.insert(tr->derived);
+			EVAL(derived.size());				
+		}
+		
+		for (std::size_t j = 0; j < z; j++)
+		{
+			auto t0 = clk::now();
+			std::cout << "drmul: " << j 
+				<< " " << *drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,2)
+				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+		}		
+		
+		std::shared_ptr<HistoryArray> ha = std::move(hsha(*hrhs(*hr)));
+
+		for (std::size_t j = 0; j < z; j++)
+		{
+			auto t0 = clk::now();
+			std::cout << "drmul: " << j 
+				<< " " << *drmul(HistoryRepaPtrList{},HistoryArrayPtrList{ha},*dr,j,2)
+				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+		}	
+		
+		auto t1 = clk::now();
+		for (std::size_t j = 0; j < z; j++)
+		{
+			drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,2);		
+		}		
+		std::cout << "Average " << ((sec)(clk::now() - t1)).count()/z << "s" << std::endl;	
+	}
+	
 	return 0;
 }
