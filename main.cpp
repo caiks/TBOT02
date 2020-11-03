@@ -709,198 +709,198 @@ int main(int argc, char **argv)
 		EVAL(ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v);
 	}
 		
-	if (argc >= 3 && string(argv[1]) == "slicesSync_region")
-	{
-		auto uvars = systemsSetVar;
-		auto uruu = systemsRepasSystem;
-		auto hrconcat = vectorHistoryRepasConcat_u;
-		auto hrpart = systemsHistoryRepasApplicationsHistoryHistoryPartitionedRepa_u;
-		auto frvars = fudRepasSetVar;
-		auto frder = fudRepasDerived;
-		auto frund = fudRepasUnderlying;
+	// if (argc >= 3 && string(argv[1]) == "slicesSync_region")
+	// {
+		// auto uvars = systemsSetVar;
+		// auto uruu = systemsRepasSystem;
+		// auto hrconcat = vectorHistoryRepasConcat_u;
+		// auto hrpart = systemsHistoryRepasApplicationsHistoryHistoryPartitionedRepa_u;
+		// auto frvars = fudRepasSetVar;
+		// auto frder = fudRepasDerived;
+		// auto frund = fudRepasUnderlying;
 		
-		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
-		size_t scale = argc >= 5 ? atoi(argv[4]) : 1;
+		// string model = string(argv[2]);
+		// string dataset = string(argc >= 4 ? argv[3] : "data002");
+		// size_t scale = argc >= 5 ? atoi(argv[4]) : 1;
 		
-		EVAL(model);
-		EVAL(dataset);
-		EVAL(scale);
+		// EVAL(model);
+		// EVAL(dataset);
+		// EVAL(scale);
 
-		std::unique_ptr<System> uu;
-		Active active;
-		{	
-			std::unique_ptr<SystemRepa> ur;
-			std::unique_ptr<HistoryRepa> hr;
-			HistoryRepaPtrList ll;
-			int s = 17;
-			std::ifstream in(dataset+".bin", std::ios::binary);
-			auto qq = persistentsRecordList(in);
-			in.close();
-			for (int i = 0; i < scale; i++)
-			{
-				auto xx = recordListsHistoryRepaRegion(8, 60, s++, *qq);
-				uu = std::move(std::get<0>(xx));
-				ur = std::move(std::get<1>(xx));
-				ll.push_back(std::move(std::get<2>(xx)));
-			}
-			active.history = vectorHistoryRepasConcat_u(ll);
-			active.historyOverflow = true;
-		}
-		{
-			StrVarPtrMap m;
-			std::ifstream in(model + ".dr", std::ios::binary);
-			active.system = persistentsSystemRepa(in, m);
-			active.application = persistentsApplicationRepa(in);
-			in.close();		
-		}
+		// std::unique_ptr<System> uu;
+		// Active active;
+		// {	
+			// std::unique_ptr<SystemRepa> ur;
+			// std::unique_ptr<HistoryRepa> hr;
+			// HistoryRepaPtrList ll;
+			// int s = 17;
+			// std::ifstream in(dataset+".bin", std::ios::binary);
+			// auto qq = persistentsRecordList(in);
+			// in.close();
+			// for (int i = 0; i < scale; i++)
+			// {
+				// auto xx = recordListsHistoryRepaRegion(8, 60, s++, *qq);
+				// uu = std::move(std::get<0>(xx));
+				// ur = std::move(std::get<1>(xx));
+				// ll.push_back(std::move(std::get<2>(xx)));
+			// }
+			// active.history = vectorHistoryRepasConcat_u(ll);
+			// active.historyOverflow = true;
+		// }
+		// {
+			// StrVarPtrMap m;
+			// std::ifstream in(model + ".dr", std::ios::binary);
+			// active.system = persistentsSystemRepa(in, m);
+			// active.application = persistentsApplicationRepa(in);
+			// in.close();		
+		// }
 
-		active.report();
-		active.slicesSync();
-		active.report();
-		{
-			SizeSizePairList ll;
-			for (auto& p : active.slicesSetEvent)
-				ll.push_back(SizeSizePair(p.second.size(),p.first));
-			std::sort(ll.begin(), ll.end());
-			EVAL(ll);
-		}
-	}
+		// active.report();
+		// active.slicesSync();
+		// active.report();
+		// {
+			// SizeSizePairList ll;
+			// for (auto& p : active.slicesSetEvent)
+				// ll.push_back(SizeSizePair(p.second.size(),p.first));
+			// std::sort(ll.begin(), ll.end());
+			// EVAL(ll);
+		// }
+	// }
 	
-	if (argc >= 3 && string(argv[1]) == "slicesSync")
-	{
-		auto uvars = systemsSetVar;
-		auto uruu = systemsRepasSystem;
-		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
-		auto hrconcat = vectorHistoryRepasConcat_u;
-		auto frvars = fudRepasSetVar;
-		auto frder = fudRepasDerived;
-		auto frund = fudRepasUnderlying;
+	// if (argc >= 3 && string(argv[1]) == "slicesSync")
+	// {
+		// auto uvars = systemsSetVar;
+		// auto uruu = systemsRepasSystem;
+		// auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		// auto hrconcat = vectorHistoryRepasConcat_u;
+		// auto frvars = fudRepasSetVar;
+		// auto frder = fudRepasDerived;
+		// auto frund = fudRepasUnderlying;
 		
-		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
-		size_t size = argc >= 5 ? atoi(argv[4]) : 1000;
-		size_t tint = argc >= 6 ? atoi(argv[5]) : 1;
+		// string model = string(argv[2]);
+		// string dataset = string(argc >= 4 ? argv[3] : "data002");
+		// size_t size = argc >= 5 ? atoi(argv[4]) : 1000;
+		// size_t tint = argc >= 6 ? atoi(argv[5]) : 1;
 		
-		EVAL(model);
-		EVAL(dataset);
-		EVAL(size);
+		// EVAL(model);
+		// EVAL(dataset);
+		// EVAL(size);
 		
-		std::unique_ptr<System> uu;
-		Active active;
-		{	
-			std::unique_ptr<SystemRepa> ur;
-			std::unique_ptr<HistoryRepa> hr;
-			HistoryRepaPtrList ll;
-			int s = 17;
-			std::ifstream in(dataset+".bin", std::ios::binary);
-			auto qq = persistentsRecordList(in);
-			in.close();
-			auto xx = recordListsHistoryRepa_2(8, *qq);
-			uu = std::move(std::get<0>(xx));
-			ur = std::move(std::get<1>(xx));
-			active.history = std::move(std::get<2>(xx));
-			if (size < active.history->size)
-			{
-				SizeList ev;
-				for (size_t i = 0; i < size; i++)
-					ev.push_back(i);
-				active.history = hrsel(ev.size(), ev.data(), *active.history);
-			}
-			active.historyOverflow = true;
-		}
-		{
-			StrVarPtrMap m;
-			std::ifstream in(model + ".dr", std::ios::binary);
-			active.system = persistentsSystemRepa(in, m);
-			active.application = persistentsApplicationRepa(in);
-			in.close();		
-		}
+		// std::unique_ptr<System> uu;
+		// Active active;
+		// {	
+			// std::unique_ptr<SystemRepa> ur;
+			// std::unique_ptr<HistoryRepa> hr;
+			// HistoryRepaPtrList ll;
+			// int s = 17;
+			// std::ifstream in(dataset+".bin", std::ios::binary);
+			// auto qq = persistentsRecordList(in);
+			// in.close();
+			// auto xx = recordListsHistoryRepa_2(8, *qq);
+			// uu = std::move(std::get<0>(xx));
+			// ur = std::move(std::get<1>(xx));
+			// active.history = std::move(std::get<2>(xx));
+			// if (size < active.history->size)
+			// {
+				// SizeList ev;
+				// for (size_t i = 0; i < size; i++)
+					// ev.push_back(i);
+				// active.history = hrsel(ev.size(), ev.data(), *active.history);
+			// }
+			// active.historyOverflow = true;
+		// }
+		// {
+			// StrVarPtrMap m;
+			// std::ifstream in(model + ".dr", std::ios::binary);
+			// active.system = persistentsSystemRepa(in, m);
+			// active.application = persistentsApplicationRepa(in);
+			// in.close();		
+		// }
 
-		active.report();
-		active.slicesSync(tint);
-		active.report();
-		SizeSizePairList ll;
-		{
-			for (auto& p : active.slicesSetEvent)
-				ll.push_back(SizeSizePair(p.second.size(),p.first));
-			std::sort(ll.begin(), ll.end());
-			EVAL(ll);
-		}
-		active.slicesSync(tint);
-		active.report();
-		active.eventsSlice[0] = 0;
-		active.eventsSlice[1] = 0;
-		active.slicesSync(tint);
-		active.report();
-		SizeSizePairList ll2;
-		{
-			for (auto& p : active.slicesSetEvent)
-				ll2.push_back(SizeSizePair(p.second.size(),p.first));
-			std::sort(ll2.begin(), ll2.end());
-			TRUTH(ll==ll2);
-		}
-	}
+		// active.report();
+		// active.slicesSync(tint);
+		// active.report();
+		// SizeSizePairList ll;
+		// {
+			// for (auto& p : active.slicesSetEvent)
+				// ll.push_back(SizeSizePair(p.second.size(),p.first));
+			// std::sort(ll.begin(), ll.end());
+			// EVAL(ll);
+		// }
+		// active.slicesSync(tint);
+		// active.report();
+		// active.eventsSlice[0] = 0;
+		// active.eventsSlice[1] = 0;
+		// active.slicesSync(tint);
+		// active.report();
+		// SizeSizePairList ll2;
+		// {
+			// for (auto& p : active.slicesSetEvent)
+				// ll2.push_back(SizeSizePair(p.second.size(),p.first));
+			// std::sort(ll2.begin(), ll2.end());
+			// TRUTH(ll==ll2);
+		// }
+	// }
 	
-	if (argc >= 3 && string(argv[1]) == "slicesUpdate")
-	{
-		auto uvars = systemsSetVar;
-		auto uruu = systemsRepasSystem;
-		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
-		auto hrconcat = vectorHistoryRepasConcat_u;
-		auto frvars = fudRepasSetVar;
-		auto frder = fudRepasDerived;
-		auto frund = fudRepasUnderlying;
+	// if (argc >= 3 && string(argv[1]) == "slicesUpdate")
+	// {
+		// auto uvars = systemsSetVar;
+		// auto uruu = systemsRepasSystem;
+		// auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		// auto hrconcat = vectorHistoryRepasConcat_u;
+		// auto frvars = fudRepasSetVar;
+		// auto frder = fudRepasDerived;
+		// auto frund = fudRepasUnderlying;
 		
-		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
-		size_t size = argc >= 5 ? atoi(argv[4]) : 1000;
-		size_t tint = argc >= 6 ? atoi(argv[5]) : 1;
+		// string model = string(argv[2]);
+		// string dataset = string(argc >= 4 ? argv[3] : "data002");
+		// size_t size = argc >= 5 ? atoi(argv[4]) : 1000;
+		// size_t tint = argc >= 6 ? atoi(argv[5]) : 1;
 		
-		EVAL(model);
-		EVAL(dataset);
-		EVAL(size);
+		// EVAL(model);
+		// EVAL(dataset);
+		// EVAL(size);
 		
-		std::unique_ptr<System> uu;
-		Active active;
-		{	
-			std::unique_ptr<SystemRepa> ur;
-			std::unique_ptr<HistoryRepa> hr;
-			HistoryRepaPtrList ll;
-			int s = 17;
-			std::ifstream in(dataset+".bin", std::ios::binary);
-			auto qq = persistentsRecordList(in);
-			in.close();
-			auto xx = recordListsHistoryRepa_2(8, *qq);
-			uu = std::move(std::get<0>(xx));
-			ur = std::move(std::get<1>(xx));
-			active.history = std::move(std::get<2>(xx));
-			if (size < active.history->size)
-			{
-				SizeList ev;
-				for (size_t i = 0; i < size; i++)
-					ev.push_back(i);
-				active.history = hrsel(ev.size(), ev.data(), *active.history);
-			}
-			active.historyOverflow = true;
-		}
-		{
-			StrVarPtrMap m;
-			std::ifstream in(model + ".dr", std::ios::binary);
-			active.system = persistentsSystemRepa(in, m);
-			active.application = persistentsApplicationRepa(in);
-			in.close();		
-		}
+		// std::unique_ptr<System> uu;
+		// Active active;
+		// {	
+			// std::unique_ptr<SystemRepa> ur;
+			// std::unique_ptr<HistoryRepa> hr;
+			// HistoryRepaPtrList ll;
+			// int s = 17;
+			// std::ifstream in(dataset+".bin", std::ios::binary);
+			// auto qq = persistentsRecordList(in);
+			// in.close();
+			// auto xx = recordListsHistoryRepa_2(8, *qq);
+			// uu = std::move(std::get<0>(xx));
+			// ur = std::move(std::get<1>(xx));
+			// active.history = std::move(std::get<2>(xx));
+			// if (size < active.history->size)
+			// {
+				// SizeList ev;
+				// for (size_t i = 0; i < size; i++)
+					// ev.push_back(i);
+				// active.history = hrsel(ev.size(), ev.data(), *active.history);
+			// }
+			// active.historyOverflow = true;
+		// }
+		// {
+			// StrVarPtrMap m;
+			// std::ifstream in(model + ".dr", std::ios::binary);
+			// active.system = persistentsSystemRepa(in, m);
+			// active.application = persistentsApplicationRepa(in);
+			// in.close();		
+		// }
 
-		active.slicesSync(tint);
-		active.report();
-		for (std::size_t j = 0; j < 10; j++)
-		{
-			active.historyEvent = j;
-			active.slicesUpdate(tint);
-		}
-		active.report();
-	}
+		// active.slicesSync(tint);
+		// active.report();
+		// for (std::size_t j = 0; j < 10; j++)
+		// {
+			// active.historyEvent = j;
+			// active.slicesUpdate(tint);
+		// }
+		// active.report();
+	// }
 	
 	if (argc >= 3 && string(argv[1]) == "drmul")
 	{
@@ -927,10 +927,12 @@ int main(int argc, char **argv)
 		auto frund = fudRepasUnderlying;
 		auto hrhs = historyRepasHistorySparse;
 		auto hshr = historySparsesHistoryRepa;
-		auto hahs = historyArraysHistorySparse;
-		auto hsha = historySparsesHistoryArray;
+		auto llhs = listSetIntsHistorySparse;
+		auto hsll = historySparsesListSetInt;
+		auto hahs = historySparseArraysHistorySparse;
+		auto hsha = historySparsesHistorySparseArray;
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
-		auto drmul = historyRepaPtrListsHistoryArrayPtrListsDecompFudSlicedRepasEventsPathSlice_u;
+		auto drmul = historyRepaPtrListsHistorySparseArrayPtrListsDecompFudSlicedRepasEventsPathSlice_u;
 		
 		string model = string(argv[2]);
 		string dataset = string(argc >= 4 ? argv[3] : "data002");
@@ -983,17 +985,17 @@ int main(int argc, char **argv)
 		{
 			auto t0 = clk::now();
 			std::cout << "drmul: " << j 
-				<< " " << *drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,2)
+				<< " " << *drmul(HistoryRepaPtrList{hr},HistorySparseArrayPtrList{},*dr,j,2)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}		
 		
-		std::shared_ptr<HistoryArray> ha = std::move(hsha(*hrhs(*hr)));
+		std::shared_ptr<HistorySparseArray> ha = std::move(hsha(*hrhs(*hr)));
 
 		for (std::size_t j = 0; z <= 1000 && j < z; j++)
 		{
 			auto t0 = clk::now();
 			std::cout << "drmul: " << j 
-				<< " " << *drmul(HistoryRepaPtrList{},HistoryArrayPtrList{ha},*dr,j,2)
+				<< " " << *drmul(HistoryRepaPtrList{},HistorySparseArrayPtrList{ha},*dr,j,2)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}	
 		
@@ -1002,7 +1004,7 @@ int main(int argc, char **argv)
 			auto t1 = clk::now();
 			for (std::size_t j = 0; j < z; j++)
 			{
-				drmul(HistoryRepaPtrList{hr},HistoryArrayPtrList{},*dr,j,m);		
+				drmul(HistoryRepaPtrList{hr},HistorySparseArrayPtrList{},*dr,j,m);		
 			}		
 			std::cout << "Average " << m << " " << ((sec)(clk::now() - t1)).count()/z << "s" << std::endl;				
 		}
