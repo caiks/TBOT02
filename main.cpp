@@ -911,6 +911,8 @@ int main(int argc, char **argv)
 		auto add = pairHistogramsAdd_u;
 		auto ent = histogramsEntropy;
 		auto araa = systemsHistogramRepasHistogram_u;
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrhrred = setVarsHistoryRepasHistoryRepaReduced_u;
 		auto hrred = [](const HistoryRepa& hr, const SystemRepa& ur, const VarList& kk)
 		{
 			auto& vvi = ur.mapVarSize();
@@ -923,6 +925,7 @@ int main(int argc, char **argv)
 		auto hrconcat = vectorHistoryRepasConcat_u;
 		auto hrshuffle = historyRepasShuffle_u;
 		auto hrpart = systemsHistoryRepasApplicationsHistoryHistoryPartitionedRepa_u;
+		auto frmul = historyRepasFudRepasMultiply_u;
 		auto frvars = fudRepasSetVar;
 		auto frder = fudRepasDerived;
 		auto frund = fudRepasUnderlying;
@@ -990,6 +993,14 @@ int main(int argc, char **argv)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}		
 		
+		{
+			SizeList ev;
+			for (std::size_t j = 0; z <= 1000 && j < z; j++)
+				ev.push_back(j);
+			auto vv1 = treesLeafElements(*er->slices);
+			auto hs1 = hrhs(*hrhrred(vv1->size(), vv1->data(), *frmul(*hrsel(ev.size(), ev.data(), *hr), *er->fud)));
+			EVAL(*hs1);
+		}
 		std::shared_ptr<HistorySparseArray> ha = std::move(hsha(*hrhs(*hr)));
 
 		for (std::size_t j = 0; z <= 1000 && j < z; j++)
@@ -1084,7 +1095,7 @@ int main(int argc, char **argv)
 					vv1[i] = vv[i];
 					sh1[i] = sh[i];
 				}
-				hr0->evient = hr->evient;
+				hr0->evient = true;
 				hr0->size = active.historySize;
 				auto z1 = hr0->size;
 				hr0->arr = new unsigned char[z1*n];
@@ -1127,7 +1138,7 @@ int main(int argc, char **argv)
 			EVAL(hr->size);
 			Active active;
 			active.historySize = 10;
-			active.induceThreshold = 3;
+			active.induceThreshold = 2;
 			TRUTH(active.update());
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
@@ -1183,7 +1194,7 @@ int main(int argc, char **argv)
 					vv1[i] = vv[i];
 					sh1[i] = sh[i];
 				}
-				hr0->evient = hr->evient;
+				hr0->evient = true;
 				hr0->size = active.historySize;
 				auto z1 = hr0->size;
 				hr0->arr = new unsigned char[z1*n];
@@ -1206,6 +1217,7 @@ int main(int argc, char **argv)
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
+			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
 			
@@ -1226,6 +1238,7 @@ int main(int argc, char **argv)
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
+			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
 			
@@ -1246,6 +1259,7 @@ int main(int argc, char **argv)
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
+			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
 	
@@ -1266,8 +1280,205 @@ int main(int argc, char **argv)
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
+			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;		
+				
+			for (std::size_t i = 15; i < 18; i++) 
+				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),ev0->references);
+			EVAL(*ev0);	
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;	
+		}
+		
+		
+		
+		std::cout << endl;
+		{		
+			EVAL(hr->size);
+			Active active;
+			active.historySize = 10;
+			active.induceThreshold = 2;
+			TRUTH(active.update());
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			std::cout << endl;
+			
+			{
+				StrVarPtrMap m;
+				std::ifstream in(model + ".dr", std::ios::binary);
+				auto ur = persistentsSystemRepa(in, m);
+				active.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				in.close();		
+			}
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			std::cout << endl;
+			
+			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+			EVAL(*active.eventsSparse);
+			
+			auto ev0 = std::make_shared<ActiveEventsRepa>(2);
+			ev0->mapIdEvent[0] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,0)),ev0->references);
+			EVAL(*ev0);
+			
+			active.underlyingEventsRepa.push_back(ev0);
+			
+			auto hr0 = std::make_shared<HistoryRepa>();
+			{
+				auto n = hr->dimension;
+				auto vv = hr->vectorVar;
+				auto sh = hr->shape;
+				hr0->dimension = n;
+				hr0->vectorVar = new std::size_t[n];
+				auto vv1 = hr0->vectorVar;
+				hr0->shape = new std::size_t[n];
+				auto sh1 = hr0->shape;
+				for (std::size_t i = 0; i < n; i++)
+				{
+					vv1[i] = vv[i];
+					sh1[i] = sh[i];
+				}
+				hr0->evient = true;
+				hr0->size = active.historySize;
+				auto z1 = hr0->size;
+				hr0->arr = new unsigned char[z1*n];
+				auto rr0 = hr0->arr;
+				memset(rr0, 0, z1*n);
+			}
+			EVAL(*hr0);
+			active.underlyingHistoryRepa.push_back(hr0);
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;
+			
+			for (std::size_t i = 1; i < 10; i++) 
+				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),ev0->references);
+			EVAL(*ev0);	
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;
+			
+			for (std::size_t i = 10; i < 11; i++) 
+				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),ev0->references);
+			EVAL(*ev0);	
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;
+	
+			for (std::size_t i = 11; i < 15; i++) 
+				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),ev0->references);
+			EVAL(*ev0);	
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;		
+			
+			for (std::size_t i = 15; i < 18; i++) 
+				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),1);
+			EVAL(*ev0);	
+
+			{			
+				auto t0 = clk::now();
+				TRUTH(active.update());
+				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
+			}
+			EVAL(active.eventsUpdated);
+			TRUTH(active.historyOverflow);
+			EVAL(active.historyEvent);
+			EVAL(active.historySize);
+			EVAL(active.eventsSlice);
+			EVAL(active.slicesSetEvent);
+			EVAL(active.slicesInduce);
+			EVAL(*ev0);
+			EVAL(*hr0);
+			EVAL(*active.eventsSparse);
+			std::cout << endl;	
 		}
 	}
 	
