@@ -2053,5 +2053,278 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (false)
+	{
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrpr = historyRepasRed;
+		auto hrhs = historyRepasHistorySparse;
+		auto hshr = historySparsesHistoryRepa;
+		auto hahs = historySparseArraysHistorySparse;
+		auto hsha = historySparsesHistorySparseArray;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrshuffle2 = historyRepasShuffle_us;
+		auto hashuffle2 = historySparseArrayShuffle_us;
+		
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::unique_ptr<System> uu;
+			std::unique_ptr<SystemRepa> ur;
+			std::ifstream in("data009.bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepaRegion(8, 10, 17, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+			
+			SizeList ev;
+			for (size_t i = 0; i < 20; i++)
+				ev.push_back(i);
+			hr = hrsel(ev.size(), ev.data(), *hr);
+		}
+		
+		EVAL(*hr);				
+		auto pr1 = hrpr(*hr);
+		EVAL(*hrpr(*hr));
+		{
+			auto t0 = clk::now();
+			ECHO(auto hrs1 = hrshuffle(*hr,17));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs1);				
+			EVAL(*hrpr(*hrs1));			
+		}
+
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto hrs2 = hrshuffle2(*hr,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs2);				
+			EVAL(*hrpr(*hrs2));
+		}
+	}
+	
+	if (false)
+	{
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrpr = historyRepasRed;
+		auto hrhs = historyRepasHistorySparse;
+		auto hshr = historySparsesHistoryRepa;
+		auto hahs = historySparseArraysHistorySparse;
+		auto hsha = historySparsesHistorySparseArray;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrshuffle2 = historyRepasShuffle_us;
+		auto hashuffle2 = historySparseArrayShuffle_us;
+		
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::unique_ptr<System> uu;
+			std::unique_ptr<SystemRepa> ur;
+			std::ifstream in("data009.bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepaRegion(8, 10, 17, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+			
+			SizeList ev;
+			for (size_t i = 0; i < 20; i++)
+				ev.push_back(i);
+			hr = hrsel(ev.size(), ev.data(), *hr);
+			hr->transpose();		}
+		
+		EVAL(*hr);				
+		auto pr1 = hrpr(*hr);
+		EVAL(*hrpr(*hr));
+		{
+			auto t0 = clk::now();
+			ECHO(auto hrs1 = hrshuffle(*hr,17));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs1);				
+			EVAL(*hrpr(*hrs1));			
+		}
+
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto hrs2 = hrshuffle2(*hr,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs2);				
+			EVAL(*hrpr(*hrs2));
+		}
+	}
+	
+	if (false)
+	{
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrpr = historyRepasRed;
+		auto hrhs = historyRepasHistorySparse;
+		auto hshr = historySparsesHistoryRepa;
+		auto hahs = historySparseArraysHistorySparse;
+		auto hsha = historySparsesHistorySparseArray;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrshuffle2 = historyRepasShuffle_us;
+		auto hashuffle2 = historySparseArrayShuffle_us;
+		
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::unique_ptr<System> uu;
+			std::unique_ptr<SystemRepa> ur;
+			std::ifstream in("data009.bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepaRegion(2, 1, 17, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+			
+			SizeList ev;
+			for (size_t i = 0; i < 200; i++)
+				ev.push_back(i);
+			hr = hrsel(ev.size(), ev.data(), *hr);
+			hr->vectorVar[0] = 100;
+		}
+		
+		EVAL(*hr);
+		EVAL(*hrpr(*hr));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto hrs2 = hrshuffle2(*hr,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs2);
+			EVAL(*hrpr(*hrs2));
+		}
+		
+		ECHO(auto ha = hsha(*hrhs(*hr)));
+		// EVAL(*ha);
+		// EVAL(*hahs(*ha));
+		// EVAL(*hshr(*hahs(*ha)));
+		EVAL(*hrpr(*hshr(*hahs(*ha))));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto has2 = hashuffle2(*ha,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hshr(*hahs(*has2)));
+			EVAL(*hrpr(*hshr(*hahs(*has2))));
+		}
+	}
+	
+	if (true)
+	{
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrpr = historyRepasRed;
+		auto hrha = historyRepasHistorySparseArray;
+		auto hahr = historySparseArraysHistoryRepa;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrshuffle2 = historyRepasShuffle_us;
+		auto hashuffle2 = historySparseArrayShuffle_us;
+		
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::unique_ptr<System> uu;
+			std::unique_ptr<SystemRepa> ur;
+			std::ifstream in("data009.bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepaRegion(2, 2, 17, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+			
+			SizeList ev;
+			for (size_t i = 0; i < 200; i++)
+				ev.push_back(i);
+			hr = hrsel(ev.size(), ev.data(), *hr);
+			hr->vectorVar[0] = 100;
+			hr->vectorVar[1] = 200;
+		}
+		
+		EVAL(*hr);
+		EVAL(*hrpr(*hr));
+		// EVAL(*hrhs(*hr));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto hrs2 = hrshuffle2(*hr,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs2);
+			EVAL(*hrpr(*hrs2));
+		}
+		
+		ECHO(auto ha = hrha(*hr));
+		EVAL(*hrpr(*hahr(*ha)));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto has2 = hashuffle2(*ha,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hahr(*has2));
+			EVAL(*hrpr(*hahr(*has2)));
+		}
+	}
+	
+	if (true)
+	{
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		auto hrpr = historyRepasRed;
+		auto hrha = historyRepasHistorySparseArray;
+		auto hahr = historySparseArraysHistoryRepa;
+		auto hrshuffle = historyRepasShuffle_u;
+		auto hrshuffle2 = historyRepasShuffle_us;
+		auto hashuffle2 = historySparseArrayShuffle_us;
+		
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::unique_ptr<System> uu;
+			std::unique_ptr<SystemRepa> ur;
+			std::ifstream in("data009.bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepaRegion(2, 2, 17, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+			
+			SizeList ev;
+			for (size_t i = 0; i < 200; i++)
+				ev.push_back(i);
+			hr = hrsel(ev.size(), ev.data(), *hr);
+			hr->vectorVar[0] = 100;
+			hr->vectorVar[1] = 200;
+			hr->transpose();
+		}
+		
+		EVAL(*hr);
+		EVAL(*hrpr(*hr));
+		// EVAL(*hrhs(*hr));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto hrs2 = hrshuffle2(*hr,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hrs2);
+			EVAL(*hrpr(*hrs2));
+		}
+		
+		ECHO(auto ha = hrha(*hr));
+		EVAL(*hrpr(*hahr(*ha)));
+		
+		{
+			auto t0 = clk::now();
+			std::ranlux48_base gen(17);
+			ECHO(auto has2 = hashuffle2(*ha,gen));
+			std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			EVAL(*hahr(*has2));
+			EVAL(*hrpr(*hahr(*has2)));
+		}
+	}
 	return 0;
 }
