@@ -657,6 +657,7 @@ int main(int argc, char **argv)
 
 		string model = string(argv[2]);
 		size_t size = argc >= 4 ? atoi(argv[3]) : 1000;
+		bool logging = argc >= 5;
 		EVAL(model);
 		EVAL(size);
 				
@@ -811,7 +812,7 @@ int main(int argc, char **argv)
 		{
 			auto urv = ur->listVarSizePair.size();
 
-			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, urv);
+			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, logging, urv);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));
 		}
@@ -1154,6 +1155,7 @@ int main(int argc, char **argv)
 		string model = string(argv[2]);
 		string dataset = string(argc >= 4 ? argv[3] : "data002");
 		size_t scale = argc >= 5 ? atoi(argv[4]) : 1;
+		bool logging = argc >= 6;
 		
 		EVAL(model);
 		EVAL(dataset);
@@ -1179,11 +1181,13 @@ int main(int argc, char **argv)
 			hr = vectorHistoryRepasConcat_u(ll);
 		}
 		
+		ActiveUpdateParameters pp;		
 		{		
 			EVAL(hr->size);
 			Active active;
+			active.logging = logging;
 			active.historySize = 10;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1225,7 +1229,7 @@ int main(int argc, char **argv)
 			EVAL(*hr0);
 			active.underlyingHistoryRepa.push_back(hr0);
 
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1240,7 +1244,7 @@ int main(int argc, char **argv)
 			active.decomp = std::make_shared<DecompFudSlicedRepa>();
 			EVAL(*active.decomp);
 			
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1257,9 +1261,10 @@ int main(int argc, char **argv)
 		{		
 			EVAL(hr->size);
 			Active active;
+			active.logging = logging;
 			active.historySize = 10;
 			active.induceThreshold = 2;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1278,7 +1283,7 @@ int main(int argc, char **argv)
 			}
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1326,7 +1331,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1347,7 +1352,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1368,7 +1373,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1389,7 +1394,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1410,7 +1415,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1432,9 +1437,10 @@ int main(int argc, char **argv)
 		{		
 			EVAL(hr->size);
 			Active active;
+			active.logging = logging;
 			active.historySize = 10;
 			active.induceThreshold = 2;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1453,7 +1459,7 @@ int main(int argc, char **argv)
 			}
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1501,7 +1507,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1522,7 +1528,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1543,7 +1549,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1564,7 +1570,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1585,7 +1591,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1630,11 +1636,13 @@ int main(int argc, char **argv)
 			hr = std::move(std::get<2>(xx));
 		}
 		
+		ActiveUpdateParameters pp;
+		
 		{		
 			EVAL(hr->size);
 			Active active;
 			active.historySize = 10;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1676,7 +1684,7 @@ int main(int argc, char **argv)
 			// EVAL(*hr0);
 			active.underlyingHistoryRepa.push_back(hr0);
 
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1691,7 +1699,7 @@ int main(int argc, char **argv)
 			active.decomp = std::make_shared<DecompFudSlicedRepa>();
 			EVAL(*active.decomp);
 			
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1710,7 +1718,7 @@ int main(int argc, char **argv)
 			Active active;
 			active.historySize = 10;
 			active.induceThreshold = 2;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1729,7 +1737,7 @@ int main(int argc, char **argv)
 			}
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1777,7 +1785,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1798,7 +1806,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1819,7 +1827,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1840,7 +1848,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1861,7 +1869,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1885,7 +1893,7 @@ int main(int argc, char **argv)
 			Active active;
 			active.historySize = 10;
 			active.induceThreshold = 2;
-			TRUTH(active.update());
+			TRUTH(active.update(pp));
 			EVAL(active.eventsUpdated);
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
@@ -1904,7 +1912,7 @@ int main(int argc, char **argv)
 			}
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1952,7 +1960,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1973,7 +1981,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -1994,7 +2002,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -2015,7 +2023,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -2036,7 +2044,7 @@ int main(int argc, char **argv)
 
 			{			
 				auto t0 = clk::now();
-				TRUTH(active.update());
+				TRUTH(active.update(pp));
 				std::cout << ((sec)(clk::now() - t0)).count() << "s" << std::endl;
 			}
 			EVAL(active.eventsUpdated);
@@ -2214,7 +2222,7 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	if (true)
+	if (false)
 	{
 		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
 		auto hrpr = historyRepasRed;
@@ -2270,7 +2278,7 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	if (true)
+	if (false)
 	{
 		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
 		auto hrpr = historyRepasRed;
