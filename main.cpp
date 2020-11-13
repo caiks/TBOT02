@@ -2481,7 +2481,7 @@ int main(int argc, char **argv)
 		EVAL(ur->listVarSizePair.size());
 		
 		{
-			auto eventsA = std::make_shared<ActiveEventsRepa>(1);
+			auto eventsA = std::make_shared<ActiveEventsRepa>(2);
 			
 			Active activeA;
 			activeA.historySize = 10;
@@ -2536,6 +2536,41 @@ int main(int argc, char **argv)
 			activeB.induceThreshold = 5;
 			activeB.logging = true;
 			activeB.decomp = std::make_shared<DecompFudSlicedRepa>();
+			activeB.underlyingEventsRepa.push_back(eventsA);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					vv0.push_back(mm[Variable("motor")]);
+					vv0.push_back(mm[Variable("location")]);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					memset(rr1, 0, z1*n1);			
+				}
+				activeB.underlyingHistoryRepa.push_back(hr1);
+			}
 			activeB.underlyingEventsSparse.push_back(activeA.eventsSparse);
 			activeB.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeB.historySize,1));
 			activeB.eventsSparse = std::make_shared<ActiveEventsArray>(1);
@@ -2564,11 +2599,29 @@ int main(int argc, char **argv)
 
 			ECHO(ok = activeB.update(ActiveUpdateParameters()));
 			TRUTH(ok);
+			
+			{
+				for (auto& p : activeB.slicesPath)
+				{
+					EVAL(*p.second);
+				}
+			}
 
 			EVAL(activeB.slicesInduce);
 			ECHO(ok = activeB.induce(ActiveInduceParameters()));
 			TRUTH(ok);
 			EVAL(activeB.slicesInduce);	
+			
+			{
+				EVAL(activeB.slicesInduce);
+				ActiveInduceParameters ppi;
+				ppi.znnmax = 0;
+				ppi.bmax = 2;
+				ECHO(ok = activeB.induce(ppi));
+				TRUTH(ok);
+				EVAL(activeB.slicesInduce);	
+			}
+
 		}
 
 
