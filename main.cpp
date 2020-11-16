@@ -1882,8 +1882,6 @@ int main(int argc, char **argv)
 			std::cout << endl;	
 		}
 		
-		
-		
 		std::cout << endl;
 		{		
 			EVAL(hr->size);
@@ -2039,6 +2037,16 @@ int main(int argc, char **argv)
 				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),1);
 			// EVAL(*ev0);	
 
+			auto updatePost = [](const SizeSet& eventsA, std::size_t eventA, std::size_t historyEventA, std::size_t sliceA)
+			{
+				std::cout << "eventsA: " << eventsA << std::endl;
+				std::cout << "eventA: " << eventA << std::endl;
+				std::cout << "historyEventA: " << historyEventA << std::endl;
+				std::cout << "sliceA: " << sliceA << std::endl;
+				return true;
+			};
+			
+			active.updateCallback = updatePost;
 			{			
 				auto t0 = clk::now();
 				TRUTH(active.update(pp));
