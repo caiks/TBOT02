@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 		
 		string model = string(argv[2]);
 		size_t mult = argc >= 4 ? atoi(argv[3]) : 1;
-		string dataset = string(argc >= 5 ? argv[4] : "data002");
+		string dataset = string(argc >= 5 ? argv[4] : "data009");
 		size_t scale = argc >= 6 ? atoi(argv[5]) : 10;
 		
 		EVAL(model);
@@ -969,7 +969,7 @@ int main(int argc, char **argv)
 		
 		string model = string(argv[2]);
 		size_t mult = argc >= 4 ? atoi(argv[3]) : 1;
-		string dataset = string(argc >= 5 ? argv[4] : "data002");
+		string dataset = string(argc >= 5 ? argv[4] : "data009");
 		
 		EVAL(model);
 		EVAL(mult);
@@ -1060,7 +1060,7 @@ int main(int argc, char **argv)
 		auto drmul = historyRepaPtrListsHistorySparseArrayPtrListsDecompFudSlicedRepasEventsPathSlice_u;
 		
 		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
 		size_t size = argc >= 5 ? atoi(argv[4]) : 1;
 		
 		EVAL(model);
@@ -1153,7 +1153,7 @@ int main(int argc, char **argv)
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
 		
 		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
 		size_t scale = argc >= 5 ? atoi(argv[4]) : 1;
 		bool logging = argc >= 6;
 		
@@ -1615,7 +1615,7 @@ int main(int argc, char **argv)
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
 		
 		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
 		
 		EVAL(model);
 		EVAL(dataset);
@@ -2349,7 +2349,7 @@ int main(int argc, char **argv)
 		};
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
 		
-		string dataset = string(argc >= 3 ? argv[2] : "data002");
+		string dataset = string(argc >= 3 ? argv[2] : "data009");
 		
 		EVAL(dataset);
 
@@ -2452,8 +2452,7 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			EVAL(activeA.slicesInduce);	
 		}
-
-
+		
 	}
 	
 	if (argc >= 3 && string(argv[1]) == "induce02")
@@ -2466,7 +2465,7 @@ int main(int argc, char **argv)
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
 		
 		string model = string(argv[2]);
-		string dataset = string(argc >= 4 ? argv[3] : "data002");
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
 		
 		EVAL(model);
 		EVAL(dataset);
@@ -2631,7 +2630,6 @@ int main(int argc, char **argv)
 			}
 
 		}
-
 
 	}
 
