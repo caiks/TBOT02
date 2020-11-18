@@ -812,7 +812,7 @@ int main(int argc, char **argv)
 		{
 			auto urv = ur->listVarSizePair.size();
 
-			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, logging, urv);
+			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, log, logging, urv);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));
 		}
@@ -2372,6 +2372,11 @@ int main(int argc, char **argv)
 			auto eventsA = std::make_shared<ActiveEventsRepa>(1);
 			
 			Active activeA;
+			activeA.system = std::make_shared<ActiveSystem>();
+			activeA.var = activeA.system->next(activeA.bits);
+			EVAL(activeA.var);
+			activeA.varSlice = activeA.system->next(activeA.bits);
+			EVAL(activeA.varSlice);
 			activeA.historySize = 10;
 			activeA.induceThreshold = 5;
 			activeA.logging = true;
@@ -2490,7 +2495,10 @@ int main(int argc, char **argv)
 		{
 			auto eventsA = std::make_shared<ActiveEventsRepa>(2);
 			
+			auto systemA = std::make_shared<ActiveSystem>();
+			
 			Active activeA;
+			activeA.system = systemA;
 			activeA.historySize = 10;
 			activeA.logging = true;
 			{
@@ -2499,7 +2507,12 @@ int main(int argc, char **argv)
 				auto ur = persistentsSystemRepa(in, m);
 				activeA.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
 				in.close();		
+				systemA->block = activeA.decomp->varMax() >> systemA->bits;
 			}
+			activeA.var = systemA->next(activeA.bits);
+			EVAL(activeA.var);
+			activeA.varSlice = systemA->next(activeA.bits);
+			EVAL(activeA.varSlice);
 			activeA.underlyingEventsRepa.push_back(eventsA);
 			{
 				SizeList vv0;
@@ -2539,6 +2552,11 @@ int main(int argc, char **argv)
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 
 			Active activeB;
+			activeB.system = systemA;
+			activeB.var = systemA->next(activeB.bits);
+			EVAL(activeB.var);
+			activeB.varSlice = systemA->next(activeB.bits);
+			EVAL(activeB.varSlice);
 			activeB.historySize = 10;
 			activeB.induceThreshold = 5;
 			activeB.logging = true;
