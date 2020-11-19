@@ -1234,7 +1234,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1249,7 +1249,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1269,7 +1269,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1290,7 +1290,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1338,7 +1338,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1359,7 +1359,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1380,7 +1380,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1401,7 +1401,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1422,7 +1422,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1442,7 +1442,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1463,7 +1463,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1511,7 +1511,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1532,7 +1532,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1553,7 +1553,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1574,7 +1574,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1595,7 +1595,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			EVAL(*ev0);
@@ -1686,7 +1686,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1701,7 +1701,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1720,7 +1720,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1741,7 +1741,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1789,7 +1789,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1810,7 +1810,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1831,7 +1831,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1852,7 +1852,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1873,7 +1873,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1893,7 +1893,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1914,7 +1914,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			std::cout << endl;
@@ -1962,7 +1962,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -1983,7 +1983,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -2004,7 +2004,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -2025,7 +2025,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -2056,7 +2056,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.eventsSlice);
+			EVAL(active.historySparse);
 			EVAL(active.slicesSetEvent);
 			EVAL(active.slicesInduce);
 			// EVAL(*ev0);
@@ -2648,7 +2648,44 @@ int main(int argc, char **argv)
 			}
 
 		}
-
+	}
+		
+	if (false)
+	{			
+		ActiveSystem systemA;
+		systemA.bits = 4;
+		EVAL(systemA.bits);
+		EVAL(systemA.block);
+		EVAL(systemA.next(4));
+		EVAL(systemA.block);
+		EVAL(systemA.next(6));
+		EVAL(systemA.block);
+		EVAL(systemA.next(4));
+		EVAL(systemA.block);
+		EVAL(systemA.next(4));
+		EVAL(systemA.block);
+		EVAL(systemA.next(3));
+		EVAL(systemA.block);
+		
+		EVAL(std::size_t(-1));
+		ECHO(systemA.block = std::size_t(-1) >> 4);
+		try 
+		{
+			EVAL(systemA.next(4));
+		} 
+		catch (const std::out_of_range& e) 
+		{
+			EVAL(e.what());
+		}		
+		ECHO(systemA.block = std::size_t(-1) >> 4);
+		try 
+		{
+			EVAL(systemA.next(6));
+		} 
+		catch (const std::out_of_range& e) 
+		{
+			EVAL(e.what());
+		}		
 	}
 
 	return 0;
