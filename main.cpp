@@ -1192,8 +1192,8 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 						
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 			EVAL(*active.eventsSparse);
@@ -1235,8 +1235,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
@@ -1250,8 +1250,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
@@ -1270,8 +1270,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			{
@@ -1291,8 +1291,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
@@ -1339,8 +1339,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1360,8 +1360,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1381,8 +1381,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1402,8 +1402,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1423,8 +1423,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1443,8 +1443,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			{
@@ -1464,8 +1464,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
@@ -1512,8 +1512,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1533,8 +1533,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1554,8 +1554,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1575,8 +1575,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1596,8 +1596,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1644,8 +1644,8 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 						
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 			EVAL(*active.eventsSparse);
@@ -1687,8 +1687,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
@@ -1702,8 +1702,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
@@ -1721,8 +1721,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			{
@@ -1742,8 +1742,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
@@ -1790,8 +1790,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1811,8 +1811,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1832,8 +1832,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1853,8 +1853,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1874,8 +1874,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1894,8 +1894,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			{
@@ -1915,8 +1915,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			std::cout << endl;
 			
 			active.eventsSparse = std::make_shared<ActiveEventsArray>(1);
@@ -1963,8 +1963,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -1984,8 +1984,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -2005,8 +2005,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -2026,8 +2026,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -2057,8 +2057,8 @@ int main(int argc, char **argv)
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
 			EVAL(active.historySparse);
-			EVAL(active.slicesSetEvent);
-			EVAL(active.slicesInduce);
+			EVAL(active.historySlicesSetEvent);
+			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			// EVAL(*hr0);
 			EVAL(*active.eventsSparse);
@@ -2426,10 +2426,12 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			EVAL(activeA.historyEvent);
 
-			EVAL(activeA.slicesInduce);
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);
 			ECHO(ok = activeA.induce(ActiveInduceParameters()));
 			TRUTH(ok);
-			EVAL(activeA.slicesInduce);
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);
 			
 			for (std::size_t i = 0; i < 2; i++) 
 				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
@@ -2439,10 +2441,12 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			EVAL(activeA.historyEvent);
 
-			EVAL(activeA.slicesInduce);
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);
 			ECHO(ok = activeA.induce(ActiveInduceParameters()));
 			TRUTH(ok);
-			EVAL(activeA.slicesInduce);	
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);	
 			
 			for (std::size_t i = 2; i < 6; i++) 
 				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
@@ -2452,10 +2456,12 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			EVAL(activeA.historyEvent);
 
-			EVAL(activeA.slicesInduce);
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);
 			ECHO(ok = activeA.induce(ActiveInduceParameters()));
 			TRUTH(ok);
-			EVAL(activeA.slicesInduce);	
+			EVAL(activeA.historySlicesSetEvent);
+			EVAL(activeA.induceSlices);	
 		}
 		
 	}
@@ -2475,8 +2481,6 @@ int main(int argc, char **argv)
 		EVAL(model);
 		EVAL(dataset);
 		
-		EVAL(dataset);
-
 		std::unique_ptr<System> uu;
 		std::unique_ptr<SystemRepa> ur;
 		std::unique_ptr<HistoryRepa> hr;
@@ -2611,10 +2615,12 @@ int main(int argc, char **argv)
 			ECHO(ok = activeB.update(ActiveUpdateParameters()));
 			TRUTH(ok);
 
-			EVAL(activeB.slicesInduce);
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);
 			ECHO(ok = activeB.induce(ActiveInduceParameters()));
 			TRUTH(ok);
-			EVAL(activeB.slicesInduce);	
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);	
 			
 			for (std::size_t i = 2; i < 6; i++) 
 				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
@@ -2626,25 +2632,29 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			
 			{
-				for (auto& p : activeB.slicesPath)
-				{
-					EVAL(*p.second);
-				}
+				// for (auto& p : activeB.slicesPath)
+				// {
+					// EVAL(*p.second);
+				// }
 			}
 
-			EVAL(activeB.slicesInduce);
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);
 			ECHO(ok = activeB.induce(ActiveInduceParameters()));
 			TRUTH(ok);
-			EVAL(activeB.slicesInduce);	
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);	
 			
 			{
-				EVAL(activeB.slicesInduce);
-				ActiveInduceParameters ppi;
-				ppi.znnmax = 0;
-				ppi.bmax = 2;
-				ECHO(ok = activeB.induce(ppi));
-				TRUTH(ok);
-				EVAL(activeB.slicesInduce);	
+				// EVAL(activeA.historySlicesSetEvent);
+				// EVAL(activeB.induceSlices);
+				// ActiveInduceParameters ppi;
+				// ppi.znnmax = 0;
+				// ppi.bmax = 2;
+				// ECHO(ok = activeB.induce(ppi));
+				// TRUTH(ok);
+				// EVAL(activeA.historySlicesSetEvent);
+				// EVAL(activeB.induceSlices);	
 			}
 
 		}
