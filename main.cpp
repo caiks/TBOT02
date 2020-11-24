@@ -1114,6 +1114,25 @@ int main(int argc, char **argv)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}		
 		
+		if (false)
+		{
+			std::string filename = "test.bin";
+			std::ofstream out(filename, std::ios::binary);
+			ECHO(decompFudSlicedRepasPersistent(*dr, out));
+			out.close();
+
+			std::ifstream in(filename, std::ios::binary);
+			ECHO(auto dr2 = persistentsDecompFudSlicedRepa(in));
+			in.close();
+			for (std::size_t j = 0; z <= 1000 && j < z; j++)
+			{
+				auto t0 = clk::now();
+				std::cout << "drmul: " << j 
+					<< " " << *drmul(HistoryRepaPtrList{hr},HistorySparseArrayPtrList{},*dr2,j,2)
+					<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+			}		
+		}
+		
 		{
 			SizeList ev;
 			for (std::size_t j = 0; z <= 1000 && j < z; j++)
@@ -1234,14 +1253,14 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
 			
-			active.decomp = std::make_shared<DecompFudSlicedRepa>();
+			active.decomp = std::make_unique<DecompFudSlicedRepa>();
 			EVAL(*active.decomp);
 			
 			TRUTH(active.update(pp));
@@ -1249,7 +1268,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1269,7 +1288,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1278,7 +1297,7 @@ int main(int argc, char **argv)
 				StrVarPtrMap m;
 				std::ifstream in(model + ".dr", std::ios::binary);
 				auto ur = persistentsSystemRepa(in, m);
-				active.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				active.decomp = erdr(*persistentsApplicationRepa(in));
 				in.close();		
 			}
 			{			
@@ -1290,7 +1309,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1338,7 +1357,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1359,7 +1378,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1380,7 +1399,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1401,7 +1420,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1422,7 +1441,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1442,7 +1461,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1451,7 +1470,7 @@ int main(int argc, char **argv)
 				StrVarPtrMap m;
 				std::ifstream in(model + ".dr", std::ios::binary);
 				auto ur = persistentsSystemRepa(in, m);
-				active.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				active.decomp = erdr(*persistentsApplicationRepa(in));
 				in.close();		
 			}
 			{			
@@ -1463,7 +1482,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1511,7 +1530,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1532,7 +1551,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1553,7 +1572,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1574,7 +1593,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1595,7 +1614,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			EVAL(*ev0);
@@ -1686,14 +1705,14 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
 			EVAL(*active.eventsSparse);
 			std::cout << endl;
 			
-			active.decomp = std::make_shared<DecompFudSlicedRepa>();
+			active.decomp = std::make_unique<DecompFudSlicedRepa>();
 			EVAL(*active.decomp);
 			
 			TRUTH(active.update(pp));
@@ -1701,7 +1720,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1720,7 +1739,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1729,7 +1748,7 @@ int main(int argc, char **argv)
 				StrVarPtrMap m;
 				std::ifstream in(model + ".dr", std::ios::binary);
 				auto ur = persistentsSystemRepa(in, m);
-				active.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				active.decomp = erdr(*persistentsApplicationRepa(in));
 				in.close();		
 			}
 			{			
@@ -1741,7 +1760,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1789,7 +1808,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1810,7 +1829,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1831,7 +1850,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1852,7 +1871,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1873,7 +1892,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1893,7 +1912,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1902,7 +1921,7 @@ int main(int argc, char **argv)
 				StrVarPtrMap m;
 				std::ifstream in(model + ".dr", std::ios::binary);
 				auto ur = persistentsSystemRepa(in, m);
-				active.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				active.decomp = erdr(*persistentsApplicationRepa(in));
 				in.close();		
 			}
 			{			
@@ -1914,7 +1933,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			std::cout << endl;
@@ -1962,7 +1981,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -1983,7 +2002,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -2004,7 +2023,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -2025,7 +2044,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -2056,7 +2075,7 @@ int main(int argc, char **argv)
 			TRUTH(active.historyOverflow);
 			EVAL(active.historyEvent);
 			EVAL(active.historySize);
-			EVAL(active.historySparse);
+			{if (active.historySparse) {EVAL(*active.historySparse);}}
 			EVAL(active.historySlicesSetEvent);
 			EVAL(active.induceSlices);
 			// EVAL(*ev0);
@@ -2380,7 +2399,7 @@ int main(int argc, char **argv)
 			activeA.historySize = 10;
 			activeA.induceThreshold = 5;
 			activeA.logging = true;
-			activeA.decomp = std::make_shared<DecompFudSlicedRepa>();
+			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeA.underlyingEventsRepa.push_back(eventsA);
 			{
 				SizeList vv0;
@@ -2462,6 +2481,34 @@ int main(int argc, char **argv)
 			TRUTH(ok);
 			EVAL(activeA.historySlicesSetEvent);
 			EVAL(activeA.induceSlices);	
+			
+			if (false)
+			{
+				{if (activeA.historySparse) {{if (activeA.historySparse) {EVAL(*activeA.historySparse);}}}}
+				std::string filename = "test.bin";
+				std::ofstream out(filename, std::ios::binary);
+				ECHO(historySparseArraysPersistentInitial(*activeA.historySparse, 3, out));
+				out.close();
+
+				std::ifstream in(filename, std::ios::binary);
+				ECHO(auto hr2 = persistentInitialsHistorySparseArray(in));
+				EVAL(*hr2);
+				in.close();
+			}
+			
+			if (false)
+			{
+				{if (activeA.historySparse) {{if (activeA.historySparse) {EVAL(*activeA.historySparse);}}}}
+				std::string filename = "test.bin";
+				std::ofstream out(filename, std::ios::binary);
+				ECHO(historySparseArraysPersistent(*activeA.historySparse,out));
+				out.close();
+
+				std::ifstream in(filename, std::ios::binary);
+				ECHO(auto hr2 = persistentsHistorySparseArray(in));
+				EVAL(*hr2);
+				in.close();
+			}
 		}
 		
 	}
@@ -2509,7 +2556,7 @@ int main(int argc, char **argv)
 				StrVarPtrMap m;
 				std::ifstream in(model + ".dr", std::ios::binary);
 				auto ur = persistentsSystemRepa(in, m);
-				activeA.decomp = std::move(erdr(*persistentsApplicationRepa(in)));
+				activeA.decomp = erdr(*persistentsApplicationRepa(in));
 				in.close();		
 				systemA->block = activeA.decomp->varMax() >> systemA->bits;
 			}
@@ -2564,7 +2611,7 @@ int main(int argc, char **argv)
 			activeB.historySize = 10;
 			activeB.induceThreshold = 5;
 			activeB.logging = true;
-			activeB.decomp = std::make_shared<DecompFudSlicedRepa>();
+			activeB.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeB.underlyingEventsRepa.push_back(eventsA);
 			{
 				SizeList vv0;
