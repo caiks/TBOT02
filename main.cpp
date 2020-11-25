@@ -1206,6 +1206,16 @@ int main(int argc, char **argv)
 			Active active;
 			active.logging = logging;
 			active.historySize = 10;
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
 			TRUTH(active.historyOverflow);
@@ -1283,6 +1293,16 @@ int main(int argc, char **argv)
 			active.logging = logging;
 			active.historySize = 10;
 			active.induceThreshold = 2;
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}			
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
 			TRUTH(active.historyOverflow);
@@ -1456,6 +1476,16 @@ int main(int argc, char **argv)
 			active.logging = logging;
 			active.historySize = 10;
 			active.induceThreshold = 2;
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
 			TRUTH(active.historyOverflow);
@@ -1699,6 +1729,16 @@ int main(int argc, char **argv)
 			}
 			// EVAL(*hr0);
 			active.underlyingHistoryRepa.push_back(hr0);
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}
 
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
@@ -1734,6 +1774,16 @@ int main(int argc, char **argv)
 			Active active;
 			active.historySize = 10;
 			active.induceThreshold = 2;
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
 			TRUTH(active.historyOverflow);
@@ -1907,6 +1957,16 @@ int main(int argc, char **argv)
 			Active active;
 			active.historySize = 10;
 			active.induceThreshold = 2;
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = active.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				active.historySparse = std::move(hr);			
+			}
 			TRUTH(active.update(pp));
 			EVAL(active.underlyingEventUpdateds);
 			TRUTH(active.historyOverflow);
@@ -2436,6 +2496,16 @@ int main(int argc, char **argv)
 				}
 				activeA.underlyingHistoryRepa.push_back(hr1);
 			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 
 			bool ok = true;
@@ -2600,6 +2670,16 @@ int main(int argc, char **argv)
 				}
 				activeA.underlyingHistoryRepa.push_back(hr1);
 			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 
 			Active activeB("activeB");
@@ -2649,6 +2729,16 @@ int main(int argc, char **argv)
 			}
 			activeB.underlyingEventsSparse.push_back(activeA.eventsSparse);
 			activeB.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeB.historySize,1));
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeB.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeB.historySparse = std::move(hr);			
+			}
 			activeB.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 			
 			bool ok = true;
@@ -2694,16 +2784,61 @@ int main(int argc, char **argv)
 			EVAL(activeB.historySlicesSetEvent);
 			EVAL(activeB.induceSlices);	
 			
+			if (false)
 			{
-				// EVAL(activeA.historySlicesSetEvent);
-				// EVAL(activeB.induceSlices);
-				// ActiveInduceParameters ppi;
-				// ppi.znnmax = 0;
-				// ppi.bmax = 2;
-				// ECHO(ok = activeB.induce(ppi));
-				// TRUTH(ok);
-				// EVAL(activeA.historySlicesSetEvent);
-				// EVAL(activeB.induceSlices);	
+				EVAL(activeA.historySlicesSetEvent);
+				EVAL(activeB.induceSlices);
+				ActiveInduceParameters ppi;
+				ppi.znnmax = 0;
+				ppi.bmax = 2;
+				ECHO(ok = activeB.induce(ppi));
+				TRUTH(ok);
+				EVAL(activeA.historySlicesSetEvent);
+				EVAL(activeB.induceSlices);	
+			}
+			
+			if (true)
+			{
+				ActiveIOParameters pp;
+				pp.filename = "test.bin";
+				ECHO(ok = activeB.dump(pp));
+				TRUTH(ok);				
+				Active activeC("activeC");
+				activeC.historyOverflow = true;
+				ECHO(ok = activeC.load(pp));
+				TRUTH(ok);				
+				EVAL(activeB.name);				
+				EVAL(activeC.name);				
+				EVAL(activeB.underlyingEventUpdateds);				
+				EVAL(activeC.underlyingEventUpdateds);				
+				EVAL(activeB.historySize);				
+				EVAL(activeC.historySize);				
+				TRUTH(activeB.historyOverflow);				
+				TRUTH(activeC.historyOverflow);				
+				EVAL(activeB.historyEvent);				
+				EVAL(activeC.historyEvent);		
+				{
+					for (auto& hr : activeB.underlyingHistoryRepa)
+					{
+						EVAL(*hr);				
+					}
+					for (auto& hr : activeC.underlyingHistoryRepa)
+					{
+						EVAL(*hr);				
+					}
+				}	
+				{
+					for (auto& hr : activeB.underlyingHistorySparse)
+					{
+						EVAL(*hr);				
+					}
+					for (auto& hr : activeC.underlyingHistorySparse)
+					{
+						EVAL(*hr);				
+					}
+				}				
+				EVAL(sorted(activeB.underlyingSlicesParent));				
+				EVAL(sorted(activeC.underlyingSlicesParent));		
 			}
 
 		}
