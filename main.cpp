@@ -2842,7 +2842,7 @@ int main(int argc, char **argv)
 				EVAL(activeB.induceSlices);	
 			}
 			
-			if (true)
+			if (false)
 			{
 				ActiveIOParameters pp;
 				pp.filename = "test.bin";
