@@ -2883,7 +2883,27 @@ int main(int argc, char **argv)
 					}
 				}				
 				EVAL(sorted(activeB.underlyingSlicesParent));				
-				EVAL(sorted(activeC.underlyingSlicesParent));		
+				EVAL(sorted(activeC.underlyingSlicesParent));	
+				EVAL(*activeB.decomp);				
+				EVAL(*activeC.decomp);				
+				EVAL(activeB.bits);				
+				EVAL(activeC.bits);				
+				EVAL(activeB.var);				
+				EVAL(activeC.var);				
+				EVAL(activeB.varSlice);				
+				EVAL(activeC.varSlice);				
+				EVAL(activeB.induceThreshold);				
+				EVAL(activeC.induceThreshold);				
+				EVAL(activeB.induceVarExlusions);				
+				EVAL(activeC.induceVarExlusions);				
+				if (activeB.historySparse) {EVAL(*activeB.historySparse);}				
+				if (activeC.historySparse) {EVAL(*activeC.historySparse);}			
+				EVAL(activeB.historySlicesSetEvent);				
+				EVAL(activeC.historySlicesSetEvent);				
+				EVAL(activeB.induceSlices);				
+				EVAL(activeC.induceSlices);				
+				EVAL(activeB.induceSliceFailsSize);				
+				EVAL(activeC.induceSliceFailsSize);				
 			}
 
 		}
