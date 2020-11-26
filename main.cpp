@@ -1058,6 +1058,7 @@ int main(int argc, char **argv)
 		auto hsha = historySparsesHistorySparseArray;
 		auto erdr = applicationRepasDecompFudSlicedRepa_u;
 		auto drmul = historyRepaPtrListsHistorySparseArrayPtrListsDecompFudSlicedRepasEventsPathSlice_u;
+		auto drmul2 = listVarValuesDecompFudSlicedRepasPathSlice_u;
 		
 		string model = string(argv[2]);
 		string dataset = string(argc >= 4 ? argv[3] : "data009");
@@ -1114,6 +1115,32 @@ int main(int argc, char **argv)
 				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
 		}		
 		
+		for (std::size_t j = 0; z <= 1000 && j < z; j++)
+		{
+			auto t0 = clk::now();
+			SizeUCharStructList jj;
+			{
+				auto n = hr->dimension;
+				auto vv = hr->vectorVar;
+				auto z = hr->size;
+				auto rr = hr->arr;	
+				jj.reserve(n);
+				for (std::size_t i = 0; i < n; i++)
+				{
+					SizeUCharStruct qq;
+					qq.uchar = rr[hr->evient ? j*n + i : i*z + j];			
+					if (qq.uchar)
+					{
+						qq.size = vv[i];
+						jj.push_back(qq);
+					}
+				}
+			}
+			std::cout << "drmul2: " << j 
+				<< " " << *drmul2(jj,*dr,2)
+				<< " " << ((sec)(clk::now() - t0)).count() << "s" << std::endl;		
+		}		
+		
 		if (false)
 		{
 			std::string filename = "test.bin";
@@ -1156,7 +1183,25 @@ int main(int argc, char **argv)
 			auto t1 = clk::now();
 			for (std::size_t j = 0; j < z; j++)
 			{
-				drmul(HistoryRepaPtrList{hr},HistorySparseArrayPtrList{},*dr,j,m);		
+				SizeUCharStructList jj;
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto z = hr->size;
+					auto rr = hr->arr;	
+					jj.reserve(n);
+					for (std::size_t i = 0; i < n; i++)
+					{
+						SizeUCharStruct qq;
+						qq.uchar = rr[hr->evient ? j*n + i : i*z + j];			
+						if (qq.uchar)
+						{
+							qq.size = vv[i];
+							jj.push_back(qq);
+						}
+					}
+				}
+				drmul2(jj,*dr,m);		
 			}		
 			std::cout << "Average " << m << " " << ((sec)(clk::now() - t1)).count()/z << "s" << std::endl;				
 		}
