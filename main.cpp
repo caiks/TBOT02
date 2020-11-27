@@ -2842,13 +2842,14 @@ int main(int argc, char **argv)
 				EVAL(activeB.induceSlices);	
 			}
 			
-			if (false)
+			if (true)
 			{
 				ActiveIOParameters pp;
 				pp.filename = "test.bin";
 				ECHO(ok = activeB.dump(pp));
 				TRUTH(ok);				
 				Active activeC("activeC");
+				activeC.logging = true;
 				activeC.historyOverflow = true;
 				ECHO(ok = activeC.load(pp));
 				TRUTH(ok);				
@@ -2894,8 +2895,8 @@ int main(int argc, char **argv)
 				EVAL(activeC.varSlice);				
 				EVAL(activeB.induceThreshold);				
 				EVAL(activeC.induceThreshold);				
-				EVAL(activeB.induceVarExlusions);				
-				EVAL(activeC.induceVarExlusions);				
+				EVAL(activeB.induceVarExclusions);				
+				EVAL(activeC.induceVarExclusions);				
 				if (activeB.historySparse) {EVAL(*activeB.historySparse);}				
 				if (activeC.historySparse) {EVAL(*activeC.historySparse);}			
 				EVAL(activeB.historySlicesSetEvent);				
