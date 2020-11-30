@@ -2948,5 +2948,170 @@ int main(int argc, char **argv)
 		}		
 	}
 
+	// if (argc >= 3 && string(argv[1]) == "induce03")
+	// {
+		// auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		// {
+			// SizeList ll {ev};
+			// return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		// };
+		// auto erdr = applicationRepasDecompFudSlicedRepa_u;
+		
+		// string dataset = string(argc >= 3 ? argv[2] : "data009");
+		
+		// EVAL(dataset);
+
+		// std::unique_ptr<System> uu;
+		// std::unique_ptr<SystemRepa> ur;
+		// std::unique_ptr<HistoryRepa> hr;
+		// {
+			// std::ifstream in(dataset+".bin", std::ios::binary);
+			// auto qq = persistentsRecordList(in);
+			// in.close();
+			// auto xx = recordListsHistoryRepa_4(8, *qq);
+			// uu = std::move(std::get<0>(xx));
+			// ur = std::move(std::get<1>(xx));
+			// hr = std::move(std::get<2>(xx));
+		// }
+		// EVAL(hr->size);
+		// EVAL(ur->listVarSizePair.size());
+		
+		// {
+			// auto eventsA = std::make_shared<ActiveEventsRepa>(1);
+			
+			// Active activeA;
+			// activeA.system = std::make_shared<ActiveSystem>();
+			// activeA.var = activeA.system->next(activeA.bits);
+			// EVAL(activeA.var);
+			// activeA.varSlice = activeA.system->next(activeA.bits);
+			// EVAL(activeA.varSlice);
+			// activeA.historySize = 10;
+			// activeA.induceThreshold = 5;
+			// activeA.logging = true;
+			// activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+			// activeA.underlyingEventsRepa.push_back(eventsA);
+			// {
+				// SizeList vv0;
+				// {
+					// auto& mm = ur->mapVarSize();
+					// auto vscan = std::make_shared<Variable>("scan");
+					// for (int i = 330; i < 390; i++)
+						// vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+				// }
+				// auto hr1 = std::make_shared<HistoryRepa>();
+				// {
+					// auto n = hr->dimension;
+					// auto vv = hr->vectorVar;
+					// auto sh = hr->shape;
+					// auto& mvv = hr->mapVarInt();
+					// auto n1 = vv0.size();
+					// hr1->dimension = n1;
+					// hr1->vectorVar = new std::size_t[n1];
+					// auto vv1 = hr1->vectorVar;
+					// hr1->shape = new std::size_t[n1];
+					// auto sh1 = hr1->shape;
+					// for (std::size_t i = 0; i < n1; i++)
+					// {
+						// auto v = vv0[i];
+						// vv1[i] = v;
+						// sh1[i] = sh[mvv[v]];
+					// }
+					// hr1->evient = true;
+					// hr1->size = activeA.historySize;
+					// auto z1 = hr1->size;
+					// hr1->arr = new unsigned char[z1*n1];
+					// auto rr1 = hr1->arr;
+					// memset(rr1, 0, z1*n1);			
+				// }
+				// activeA.underlyingHistoryRepa.push_back(hr1);
+			// }
+			// {
+				// auto hr = std::make_unique<HistorySparseArray>();
+				// {
+					// auto z = activeA.historySize;
+					// hr->size = z;
+					// hr->capacity = 1;
+					// hr->arr = new std::size_t[z];		
+				// }		
+				// activeA.historySparse = std::move(hr);			
+			// }
+			// activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+
+			// bool ok = true;
+			
+			// EVAL(activeA.historyEvent);
+			// ECHO(ok = activeA.update(ActiveUpdateParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historyEvent);
+
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);
+			// ECHO(ok = activeA.induce(ActiveInduceParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);
+			
+			// for (std::size_t i = 0; i < 2; i++) 
+				// eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
+	
+			// EVAL(activeA.historyEvent);
+			// ECHO(ok = activeA.update(ActiveUpdateParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historyEvent);
+
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);
+			// ECHO(ok = activeA.induce(ActiveInduceParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);	
+			
+			// for (std::size_t i = 2; i < 6; i++) 
+				// eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
+	
+			// EVAL(activeA.historyEvent);
+			// ECHO(ok = activeA.update(ActiveUpdateParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historyEvent);
+
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);
+			// ECHO(ok = activeA.induce(ActiveInduceParameters()));
+			// TRUTH(ok);
+			// EVAL(activeA.historySlicesSetEvent);
+			// EVAL(activeA.induceSlices);	
+			
+			// if (false)
+			// {
+				// {if (activeA.historySparse) {{if (activeA.historySparse) {EVAL(*activeA.historySparse);}}}}
+				// std::string filename = "test.bin";
+				// std::ofstream out(filename, std::ios::binary);
+				// ECHO(historySparseArraysPersistentInitial(*activeA.historySparse, 3, out));
+				// out.close();
+
+				// std::ifstream in(filename, std::ios::binary);
+				// ECHO(auto hr2 = persistentInitialsHistorySparseArray(in));
+				// EVAL(*hr2);
+				// in.close();
+			// }
+			
+			// if (false)
+			// {
+				// {if (activeA.historySparse) {{if (activeA.historySparse) {EVAL(*activeA.historySparse);}}}}
+				// std::string filename = "test.bin";
+				// std::ofstream out(filename, std::ios::binary);
+				// ECHO(historySparseArraysPersistent(*activeA.historySparse,out));
+				// out.close();
+
+				// std::ifstream in(filename, std::ios::binary);
+				// ECHO(auto hr2 = persistentsHistorySparseArray(in));
+				// EVAL(*hr2);
+				// in.close();
+			// }
+		// }
+		
+	// }
+	
+
 	return 0;
 }
