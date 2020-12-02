@@ -3060,6 +3060,470 @@ int main(int argc, char **argv)
 		EVAL(model+".dr");
 	}
 	
+	if (argc >= 3 && string(argv[1]) == "induce04")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto erdr = applicationRepasDecompFudSlicedRepa_u;
+		auto drer = decompFudSlicedRepasApplicationRepa_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(induceThreshold);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		auto eventsA = std::make_shared<ActiveEventsRepa>(1);
+		
+		Active activeA(model);
+		activeA.system = std::make_shared<ActiveSystem>();
+		activeA.var = activeA.system->next(activeA.bits);
+		activeA.varSlice = activeA.system->next(activeA.bits);
+		activeA.historySize = hr->size;
+		activeA.induceThreshold = induceThreshold;
+		activeA.logging = true;
+		activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+		activeA.underlyingEventsRepa.push_back(eventsA);
+		{
+			SizeList vv0;
+			{
+				auto& mm = ur->mapVarSize();
+				auto vscan = std::make_shared<Variable>("scan");
+				for (int i = 330; i < 390; i++)
+					vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+			}
+			auto hr1 = std::make_shared<HistoryRepa>();
+			{
+				auto sh = hr->shape;
+				auto& mvv = hr->mapVarInt();
+				auto n1 = vv0.size();
+				hr1->dimension = n1;
+				hr1->vectorVar = new std::size_t[n1];
+				auto vv1 = hr1->vectorVar;
+				hr1->shape = new std::size_t[n1];
+				auto sh1 = hr1->shape;
+				for (std::size_t i = 0; i < n1; i++)
+				{
+					auto v = vv0[i];
+					vv1[i] = v;
+					sh1[i] = sh[mvv[v]];
+				}
+				hr1->evient = true;
+				hr1->size = activeA.historySize;
+				auto z1 = hr1->size;
+				hr1->arr = new unsigned char[z1*n1];
+				auto rr1 = hr1->arr;
+				// memset(rr1, 0, z1*n1);			
+			}
+			activeA.underlyingHistoryRepa.push_back(hr1);
+		}
+		{
+			auto hr = std::make_unique<HistorySparseArray>();
+			{
+				auto z = activeA.historySize;
+				hr->size = z;
+				hr->capacity = 1;
+				hr->arr = new std::size_t[z];		
+			}		
+			activeA.historySparse = std::move(hr);			
+		}
+		activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+
+		activeA.logging = false;
+		ActiveUpdateParameters ppu;
+		for (std::size_t i = 0; i < activeA.historySize; i++) 
+		{
+			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);	
+			activeA.update(ppu);
+		}
+		activeA.logging = true;
+		ActiveInduceParameters ppi;
+		ppi.tint = 4;
+		ppi.wmax = 9;
+		ppi.znnmax = activeA.historySize * 2.0 * 300.0 * 300.0;
+		ppi.znnmax *= ppi.tint;
+		activeA.induce(ppi);			
+
+		// ActiveIOParameters ppio;
+		// ppio.filename = model+".ac";
+		// activeA.dump(ppio);	
+		std::ofstream out(model+".dr", std::ios::binary);
+		systemRepasPersistent(*ur, out); cout << endl;		
+		applicationRepasPersistent(*drer(*activeA.decomp), out);
+		out.close();	
+		EVAL(model+".dr");
+	}
+	
+	
+	if (argc >= 3 && string(argv[1]) == "induce05")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto drer = decompFudSlicedRepasApplicationRepa_u;
+		auto erconcat = vectorApplicationRepasConcat_u;
+		auto erjoin = applicationRepaPairsJoin_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
+		size_t induceThresholdInitial = argc >= 6 ? atoi(argv[5]) : 10000;
+		size_t level1Size = argc >= 7 ? atoi(argv[6]) : 12;
+		size_t loops = argc >= 8 ? atoi(argv[7]) : 1;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(induceThreshold);
+		EVAL(induceThresholdInitial);
+		EVAL(level1Size);
+		EVAL(loops);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		auto systemA = std::make_shared<ActiveSystem>();
+		auto eventsA = std::make_shared<ActiveEventsRepa>(level1Size+1);
+		std::size_t activeSize = hr->size;
+		std::vector<std::shared_ptr<Active>> level1;
+		for (std::size_t m = 0; m < level1Size; m++)
+			level1.push_back(std::make_shared<Active>());
+		for (std::size_t m = 0; m < level1Size; m++)
+		{			
+			auto& activeA = *level1[m];
+			activeA.name = model + "_1_" + (m<10 ? "0" : "") + std::to_string(m);
+			activeA.system = systemA;
+			activeA.var = activeA.system->next(activeA.bits);
+			activeA.varSlice = activeA.system->next(activeA.bits);
+			activeA.historySize = activeSize;
+			activeA.induceThreshold = induceThreshold;
+			activeA.logging = false;
+			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+			activeA.underlyingEventsRepa.push_back(eventsA);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					auto vscan = std::make_shared<Variable>("scan");
+					int start = 360 - (360/level1Size/2) + (360/level1Size)*m;
+					int end = start + (360/level1Size);
+					for (int i = start; i < end; i++)
+						vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					// memset(rr1, 0, z1*n1);			
+				}
+				activeA.underlyingHistoryRepa.push_back(hr1);
+			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+		}
+	
+		std::vector<std::shared_ptr<Active>> level2;
+		level2.push_back(std::make_shared<Active>());
+		{
+			auto& activeA = *level2.front();
+			activeA.name = model + "_2";
+			activeA.system = systemA;
+			activeA.var = activeA.system->next(activeA.bits);
+			activeA.varSlice = activeA.system->next(activeA.bits);
+			activeA.historySize = activeSize;
+			activeA.induceThreshold = induceThreshold;
+			activeA.logging = true;
+			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+			activeA.underlyingEventsRepa.push_back(eventsA);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					vv0.push_back(mm[Variable("motor")]);
+					vv0.push_back(mm[Variable("location")]);
+					for (auto v : vv0)
+						activeA.induceVarExclusions.insert(v);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					// memset(rr1, 0, z1*n1);			
+				}
+				activeA.underlyingHistoryRepa.push_back(hr1);
+			}
+			for (std::size_t m = 0; m < level1Size; m++)
+			{
+				auto& activeB = *level1[m];
+				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
+				activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
+		
+			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
+		}
+
+		ActiveUpdateParameters ppu;
+		ActiveInduceParameters ppi1;
+		ppi1.tint = 4;
+		ppi1.wmax = 9;
+		ppi1.znnmax = activeSize * 2.0 * 300.0 * 300.0;
+		ppi1.znnmax *= ppi1.tint;
+		ActiveInduceParameters ppi2;
+		ppi2.tint = 4;
+		ppi2.znnmax = activeSize * 2.0 * 300.0 * 300.0;
+		ppi2.znnmax *= ppi2.tint;
+		ppi2.logging = false;
+		for (std::size_t i = 0; i < activeSize*loops; i++) 
+		{
+			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,(i % hr->size))),eventsA->references);
+			for (std::size_t m = 0; m < level1Size; m++)
+			{
+				auto& activeA = *level1[m];
+				activeA.update(ppu);
+				activeA.induce(ppi1);			
+			}
+			{
+				auto& activeA = *level2.front();	
+				activeA.update(ppu);
+				if (i+1 >= induceThresholdInitial)		
+					activeA.induce(ppi2);						
+			}
+		}
+
+		for (std::size_t m = 0; m < level1Size; m++)
+		{
+			auto& activeA = *level1[m];
+			ActiveIOParameters ppio;
+			ppio.filename = activeA.name+".ac";
+			activeA.logging = true;
+			activeA.dump(ppio);			
+		}
+		{
+			auto& activeA = *level2.front();	
+			ActiveIOParameters ppio;
+			ppio.filename = activeA.name+".ac";
+			activeA.dump(ppio);							
+		}
+		{
+			std::vector<std::shared_ptr<ApplicationRepa>> ll;
+			for (std::size_t m = 0; m < level1Size; m++)
+			{
+				auto& activeA = *level1[m];
+				ll.push_back(std::move(drer(*activeA.decomp)));
+			}
+			auto er1 = erconcat(ll);
+			std::unique_ptr<ApplicationRepa> er2;
+			{
+				auto& activeA = *level2.front();	
+				er2 = drer(*activeA.decomp);						
+			}			
+			auto er3 = erjoin(*er1, *er2);
+			std::ofstream out(model+".dr", std::ios::binary);
+			systemRepasPersistent(*ur, out); cout << endl;		
+			applicationRepasPersistent(*er3, out);
+			out.close();	
+			EVAL(model+".dr");			
+		}
+	}
+	
+	if (argc >= 3 && string(argv[1]) == "load05")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto frvars = fudRepasSetVar;
+		auto frder = fudRepasDerived;
+		auto frund = fudRepasUnderlying;
+		auto drer = decompFudSlicedRepasApplicationRepa_u;
+		auto erconcat = vectorApplicationRepasConcat_u;
+		auto erjoin = applicationRepaPairsJoin_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
+		size_t induceThresholdInitial = argc >= 6 ? atoi(argv[5]) : 10000;
+		size_t level1Size = argc >= 7 ? atoi(argv[6]) : 12;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(induceThreshold);
+		EVAL(induceThresholdInitial);
+		EVAL(level1Size);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		bool ok = true;
+		auto systemA = std::make_shared<ActiveSystem>();
+		auto eventsA = std::make_shared<ActiveEventsRepa>(level1Size+1);
+		std::size_t activeSize = hr->size;
+		std::vector<std::shared_ptr<Active>> level1;
+		for (std::size_t m = 0; m < level1Size; m++)
+			level1.push_back(std::make_shared<Active>());
+		for (std::size_t m = 0; ok && m < level1Size; m++)
+		{			
+			auto& activeA = *level1[m];
+			activeA.name = model + "_1_" + (m<10 ? "0" : "") + std::to_string(m);
+			activeA.logging = true;
+			activeA.system = systemA;
+			ActiveIOParameters ppio;
+			ppio.filename = activeA.name+".ac";
+			ok = ok && activeA.load(ppio);
+			// EVAL(*activeA.decomp);
+		}
+	
+		std::vector<std::shared_ptr<Active>> level2;
+		level2.push_back(std::make_shared<Active>());
+		if (ok)
+		{
+			auto& activeA = *level2.front();
+			activeA.name = model + "_2";
+			activeA.logging = true;
+			activeA.system = systemA;
+			ActiveIOParameters ppio;
+			ppio.filename = activeA.name+".ac";
+			ok = ok && activeA.load(ppio);
+			// EVAL(*activeA.decomp);
+		}
+
+		if (ok)
+		{
+			std::vector<std::shared_ptr<ApplicationRepa>> ll;
+			for (std::size_t m = 0; m < level1Size; m++)
+			{
+				auto& activeA = *level1[m];
+				ll.push_back(std::move(drer(*activeA.decomp)));
+			}
+			auto er1 = erconcat(ll);
+			// EVAL(*er1);
+			EVAL(fudRepasSize(*er1->fud));
+			EVAL(frder(*er1->fud)->size());
+			EVAL(frund(*er1->fud)->size());
+			EVAL(treesSize(*er1->slices));
+			EVAL(treesLeafElements(*er1->slices)->size());
+			std::unique_ptr<ApplicationRepa> er2;
+			{
+				auto& activeA = *level2.front();	
+				er2 = drer(*activeA.decomp);						
+			}	
+			// EVAL(*er2);	
+			EVAL(fudRepasSize(*er2->fud));
+			EVAL(frder(*er2->fud)->size());
+			EVAL(frund(*er2->fud)->size());				
+			EVAL(treesSize(*er2->slices));
+			EVAL(treesLeafElements(*er2->slices)->size());			
+			auto er3 = erjoin(*er1, *er2);
+			// EVAL(*er3);	
+			EVAL(fudRepasSize(*er3->fud));
+			EVAL(frder(*er3->fud)->size());
+			EVAL(frund(*er3->fud)->size());
+			EVAL(treesSize(*er3->slices));
+			EVAL(treesLeafElements(*er3->slices)->size());				
+		}
+
+	}
 
 	return 0;
 }
