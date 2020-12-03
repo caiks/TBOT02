@@ -3192,6 +3192,8 @@ int main(int argc, char **argv)
 		size_t induceThresholdInitial = argc >= 6 ? atoi(argv[5]) : 10000;
 		size_t level1Size = argc >= 7 ? atoi(argv[6]) : 12;
 		size_t loops = argc >= 8 ? atoi(argv[7]) : 1;
+		size_t induceThresholdLevel1 = argc >= 9 ? atoi(argv[8]) : induceThreshold;
+		size_t induceThresholdInitialLevel1 = argc >= 10 ? atoi(argv[9]) : 1;
 		
 		EVAL(model);
 		EVAL(dataset);
@@ -3199,6 +3201,8 @@ int main(int argc, char **argv)
 		EVAL(induceThresholdInitial);
 		EVAL(level1Size);
 		EVAL(loops);
+		EVAL(induceThresholdLevel1);
+		EVAL(induceThresholdInitialLevel1);
 		
 		std::unique_ptr<System> uu;
 		std::unique_ptr<SystemRepa> ur;
@@ -3229,7 +3233,7 @@ int main(int argc, char **argv)
 			activeA.var = activeA.system->next(activeA.bits);
 			activeA.varSlice = activeA.system->next(activeA.bits);
 			activeA.historySize = activeSize;
-			activeA.induceThreshold = induceThreshold;
+			activeA.induceThreshold = induceThresholdLevel1;
 			activeA.logging = false;
 			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeA.underlyingEventsRepa.push_back(eventsA);
@@ -3291,7 +3295,7 @@ int main(int argc, char **argv)
 			activeA.varSlice = activeA.system->next(activeA.bits);
 			activeA.historySize = activeSize;
 			activeA.induceThreshold = induceThreshold;
-			activeA.logging = true;
+			activeA.logging = false;
 			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeA.underlyingEventsRepa.push_back(eventsA);
 			{
@@ -3335,7 +3339,6 @@ int main(int argc, char **argv)
 				auto& activeB = *level1[m];
 				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
 				activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
-		
 			}
 			{
 				auto hr = std::make_unique<HistorySparseArray>();
@@ -3368,13 +3371,18 @@ int main(int argc, char **argv)
 			{
 				auto& activeA = *level1[m];
 				activeA.update(ppu);
-				activeA.induce(ppi1);			
+				if (i+1 >= induceThresholdInitialLevel1)		
+					activeA.induce(ppi1);			
 			}
 			{
 				auto& activeA = *level2.front();	
+				if (i % 100 == 0)
+					activeA.logging = true;
 				activeA.update(ppu);
+				activeA.logging = true;
 				if (i+1 >= induceThresholdInitial)		
-					activeA.induce(ppi2);						
+					activeA.induce(ppi2);	
+				activeA.logging = false;
 			}
 		}
 
@@ -3424,20 +3432,17 @@ int main(int argc, char **argv)
 		auto frvars = fudRepasSetVar;
 		auto frder = fudRepasDerived;
 		auto frund = fudRepasUnderlying;
+		auto hrshuffle = historyRepasShuffle_u;
 		auto drer = decompFudSlicedRepasApplicationRepa_u;
 		auto erconcat = vectorApplicationRepasConcat_u;
 		auto erjoin = applicationRepaPairsJoin_u;
 		
 		string model = string(argv[2]);
 		string dataset = string(argc >= 4 ? argv[3] : "data009");
-		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
-		size_t induceThresholdInitial = argc >= 6 ? atoi(argv[5]) : 10000;
-		size_t level1Size = argc >= 7 ? atoi(argv[6]) : 12;
+		size_t level1Size = argc >= 5 ? atoi(argv[4]) : 12;
 		
 		EVAL(model);
 		EVAL(dataset);
-		EVAL(induceThreshold);
-		EVAL(induceThresholdInitial);
 		EVAL(level1Size);
 		
 		std::unique_ptr<System> uu;
@@ -3471,7 +3476,16 @@ int main(int argc, char **argv)
 			ActiveIOParameters ppio;
 			ppio.filename = activeA.name+".ac";
 			ok = ok && activeA.load(ppio);
-			// EVAL(*activeA.decomp);
+			// EVAL(activeA.underlyingEventUpdateds);
+			// EVAL(activeA.historySize);
+			// TRUTH(activeA.historyOverflow);
+			// EVAL(activeA.historyEvent);
+			EVAL(activeA.decomp->fudRepasSize);
+			EVAL(activeA.decomp->fuds.size());
+			activeA.logging = false;
+			activeA.underlyingEventUpdateds.clear();
+			activeA.underlyingEventsRepa.push_back(eventsA);
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 		}
 	
 		std::vector<std::shared_ptr<Active>> level2;
@@ -3485,7 +3499,23 @@ int main(int argc, char **argv)
 			ActiveIOParameters ppio;
 			ppio.filename = activeA.name+".ac";
 			ok = ok && activeA.load(ppio);
-			// EVAL(*activeA.decomp);
+			EVAL(activeA.underlyingEventUpdateds);
+			EVAL(activeA.historySize);
+			TRUTH(activeA.historyOverflow);
+			EVAL(activeA.historyEvent);
+			EVAL(activeA.decomp->fudRepasSize);
+			EVAL(activeA.decomp->fuds.size());
+			// EVAL(activeA.decomp->fuds.front());
+			// EVAL(activeA.decomp->fuds.back());
+			activeA.logging = false;
+			activeA.underlyingEventUpdateds.clear();
+			activeA.underlyingEventsRepa.push_back(eventsA);
+			for (std::size_t m = 0; m < level1Size; m++)
+			{
+				auto& activeB = *level1[m];
+				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
 		}
 
 		if (ok)
@@ -3503,6 +3533,7 @@ int main(int argc, char **argv)
 			EVAL(frund(*er1->fud)->size());
 			EVAL(treesSize(*er1->slices));
 			EVAL(treesLeafElements(*er1->slices)->size());
+			// EVAL(sorted(er1->substrate));
 			std::unique_ptr<ApplicationRepa> er2;
 			{
 				auto& activeA = *level2.front();	
@@ -3513,7 +3544,9 @@ int main(int argc, char **argv)
 			EVAL(frder(*er2->fud)->size());
 			EVAL(frund(*er2->fud)->size());				
 			EVAL(treesSize(*er2->slices));
-			EVAL(treesLeafElements(*er2->slices)->size());			
+			EVAL(treesLeafElements(*er2->slices)->size());	
+			// EVAL(sorted(*treesLeafElements(*er2->slices)));				
+			// EVAL(sorted(er2->substrate));
 			auto er3 = erjoin(*er1, *er2);
 			// EVAL(*er3);	
 			EVAL(fudRepasSize(*er3->fud));
@@ -3521,6 +3554,167 @@ int main(int argc, char **argv)
 			EVAL(frund(*er3->fud)->size());
 			EVAL(treesSize(*er3->slices));
 			EVAL(treesLeafElements(*er3->slices)->size());				
+			// EVAL(sorted(*treesLeafElements(*er3->slices)));
+			// EVAL(sorted(*treesElements(*er3->slices)));
+			// EVAL(sorted(er3->substrate));
+			// {
+				// auto er4 = std::make_unique<ApplicationRepa>();
+				// auto frvars = fudRepasSetVar;
+				// auto frdep = fudRepasSetVarsDepends;
+	
+				// er4->substrate = er1->substrate;
+				// er4->slices = std::move(pathsTree(*treesPaths(*er2->slices)));
+				// SizeUSet vv(er1->substrate.begin(), er1->substrate.end());
+				// auto sl = treesElements(*er2->slices);
+				// SizeUSet ww(sl->begin(), sl->end());
+				// FudRepa fr;
+				// fr.layers.reserve(er1->fud->layers.size() + er2->fud->layers.size());
+				// fr.layers.insert(fr.layers.end(), er1->fud->layers.begin(), er1->fud->layers.end());
+				// fr.layers.insert(fr.layers.end(), er2->fud->layers.begin(), er2->fud->layers.end());
+				// auto vv1 = frvars(*er1->fud);
+				// for (auto v : er2->substrate)
+					// if (vv1->find(v) == vv1->end())
+					// {
+						// vv.insert(v);
+						// er4->substrate.push_back(v);
+					// }
+				// er4->fud = std::move(listTransformRepasFudRepa_u(*frdep(fr, ww)));
+				// std::ofstream out("test.dr", std::ios::binary);
+				// systemRepasPersistent(*ur, out); cout << endl;		
+				// applicationRepasPersistent(*er4, out);
+				// out.close();	
+				// EVAL("test.dr");
+				// // ./main entropy test 1 data009
+			// }
+			// {
+				// auto frdep = fudRepasSetVarsDepends;
+				// auto frmul = historyRepasFudRepasMultiply_u;
+				// auto llfr = listTransformRepasFudRepa_u;
+				// auto frvars = fudRepasSetVar;
+				// SizeSizeMap aa;
+				// auto hr2 = frmul(*hr, *er3->fud);
+				// auto sl = sorted(*treesLeafElements(*er3->slices));
+				// auto m = sl.size();
+				// auto z = hr2->size;
+				// auto& mvv2 = hr2->mapVarInt();
+				// SizeList pvv2;
+				// for (auto v : sl)
+					// pvv2.push_back(mvv2[v]);
+				// auto rr2 = hr2->arr;
+				// std::size_t y = 0;
+				// for (std::size_t j = 0; j < z; j++)
+					// for (std::size_t i = 0; i < m; i++)
+					// {
+						// std::size_t u = rr2[pvv2[i]*z + j];
+						// if (u)
+						// {
+							// aa[sl[i]]++;
+							// y++;
+						// }
+					// }
+				// EVAL(y);
+				// EVAL(aa.size());					
+				// // EVAL(aa);		
+				// auto xx = llfr(*frdep(*er3->fud, SizeUSet{1704194}));
+				// EVAL(1704194 >> 16 << 16);
+				// EVAL(*frund(*xx));	
+				// EVAL(*xx);	
+				// auto yy = frvars(*xx);
+				// cout << "[";
+				// for (auto v : SizeSet(yy->begin(),yy->end()))
+				// {
+					// cout << "(" << v << ",";
+					// for (std::size_t i = 0; i < er3->fud->layers.size(); i++)
+					// {
+						// auto& ll = er3->fud->layers[i];
+						// for (auto& tr : ll)
+							// if (tr->derived == v)
+								// cout << " " << i;								
+					// }
+					// cout << "),";
+				// }
+				// cout << "]" << endl;
+				// SizeSizeSetMap bb;
+				// for (std::size_t j = 0; j < z; j++)
+					// for (std::size_t i = 0; i < m; i++)
+					// {
+						// std::size_t u = rr2[pvv2[i]*z + j];
+						// if (u && sl[i]==1703937)
+						// {
+							// for (std::size_t k = 0; k < m; k++)
+							// {
+								// std::size_t u = rr2[pvv2[k]*z + j];
+								// if (u && sl[k]!=1703937)
+								// {
+									// bb[j].insert(sl[k]);
+								// }
+							// }
+						// }
+					// }
+				// EVAL(bb);
+			// }
+		}
+		
+		if (ok)
+		{
+			ActiveUpdateParameters ppu;
+			for (std::size_t i = 0; i < hr->size; i++) 
+			{
+				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,(i % hr->size))),eventsA->references);
+				for (std::size_t m = 0; m < level1Size; m++)
+				{
+					auto& activeA = *level1[m];
+					activeA.update(ppu);
+				}
+				{
+					auto& activeA = *level2.front();	
+					activeA.update(ppu);
+				}
+			}			
+			SizeSizeMap aa;
+			for (auto& p : level2.front()->historySlicesSetEvent)
+				aa[p.first] = p.second.size();
+			// EVAL(aa.size());					
+			// EVAL(aa);					
+			auto hrs = hrshuffle(*hr, (unsigned int)(12345 + hr->size));
+			for (std::size_t i = hr->size; i < hr->size + hrs->size; i++) 
+			{
+				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hrs,(i % hrs->size))),eventsA->references);
+				for (std::size_t m = 0; m < level1Size; m++)
+				{
+					auto& activeA = *level1[m];
+					activeA.update(ppu);
+				}
+				{
+					auto& activeA = *level2.front();	
+					activeA.update(ppu);
+				}
+			}
+			SizeSizeMap bb;
+			for (auto& p : level2.front()->historySlicesSetEvent)
+				bb[p.first] = p.second.size();
+			// EVAL(bb.size());					
+			SizeSizeMap cc(aa);
+			for (auto& p : bb)
+				cc[p.first] += p.second;
+			// EVAL(cc.size());					
+			double z = (double)hr->size;
+			double a = z * std::log(z);
+			for (auto& p : aa)
+				if (p.second > 0)
+					a -= (double)p.second *  std::log((double)p.second);
+			EVAL(a);
+			double b = z * std::log(z);
+			for (auto& p : bb)
+				if (p.second > 0)
+					b -= (double)p.second *  std::log((double)p.second);
+			EVAL(b);
+			double c = 2.0 * z * std::log(2.0 * z);
+			for (auto& p : cc)
+				if (p.second > 0)
+					c -= (double)p.second *  std::log((double)p.second);
+			EVAL(c);
+			cout << "likelihood c-a-b: " << (c-a-b) << endl;
 		}
 
 	}
