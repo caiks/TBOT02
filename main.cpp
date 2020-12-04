@@ -3353,6 +3353,7 @@ int main(int argc, char **argv)
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
 		}
 
+		bool ok = true;
 		ActiveUpdateParameters ppu;
 		ActiveInduceParameters ppi1;
 		ppi1.tint = 4;
@@ -3364,29 +3365,30 @@ int main(int argc, char **argv)
 		ppi2.znnmax = activeSize * 2.0 * 300.0 * 300.0;
 		ppi2.znnmax *= ppi2.tint;
 		ppi2.logging = false;
-		for (std::size_t i = 0; i < activeSize*loops; i++) 
+		for (std::size_t i = 0; ok && i < activeSize*loops; i++) 
 		{
 			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,(i % hr->size))),eventsA->references);
-			for (std::size_t m = 0; m < level1Size; m++)
+			for (std::size_t m = 0; ok && m < level1Size; m++)
 			{
 				auto& activeA = *level1[m];
-				activeA.update(ppu);
+				ok = ok && activeA.update(ppu);
 				if (i+1 >= induceThresholdInitialLevel1)		
-					activeA.induce(ppi1);			
+					ok = ok && activeA.induce(ppi1);			
 			}
+			if (ok)
 			{
 				auto& activeA = *level2.front();	
 				if (i % 100 == 0)
 					activeA.logging = true;
-				activeA.update(ppu);
+				ok = ok && activeA.update(ppu);
 				activeA.logging = true;
 				if (i+1 >= induceThresholdInitial)		
-					activeA.induce(ppi2);	
+					ok = ok && activeA.induce(ppi2);	
 				activeA.logging = false;
 			}
 		}
 
-		for (std::size_t m = 0; m < level1Size; m++)
+		for (std::size_t m = 0; ok && m < level1Size; m++)
 		{
 			auto& activeA = *level1[m];
 			ActiveIOParameters ppio;
@@ -3394,12 +3396,14 @@ int main(int argc, char **argv)
 			activeA.logging = true;
 			activeA.dump(ppio);			
 		}
+		if (ok)
 		{
 			auto& activeA = *level2.front();	
 			ActiveIOParameters ppio;
 			ppio.filename = activeA.name+".ac";
 			activeA.dump(ppio);							
 		}
+		if (ok)
 		{
 			std::vector<std::shared_ptr<ApplicationRepa>> ll;
 			for (std::size_t m = 0; m < level1Size; m++)
@@ -3420,6 +3424,7 @@ int main(int argc, char **argv)
 			out.close();	
 			EVAL(model+".dr");			
 		}
+		TRUTH(ok);
 	}
 	
 	if (argc >= 3 && string(argv[1]) == "load05")
@@ -3429,6 +3434,7 @@ int main(int argc, char **argv)
 			SizeList ll {ev};
 			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
 		};
+		auto hrsel2 = eventsHistoryRepasHistoryRepaSelection_u;
 		auto frvars = fudRepasSetVar;
 		auto frder = fudRepasDerived;
 		auto frund = fudRepasUnderlying;
@@ -3518,6 +3524,8 @@ int main(int argc, char **argv)
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
 		}
 
+		// SizeSizeMap dd;
+		// SizeSet dev;
 		if (ok)
 		{
 			std::vector<std::shared_ptr<ApplicationRepa>> ll;
@@ -3615,49 +3623,72 @@ int main(int argc, char **argv)
 				// EVAL(y);
 				// EVAL(aa.size());					
 				// // EVAL(aa);		
-				// auto xx = llfr(*frdep(*er3->fud, SizeUSet{1704194}));
-				// EVAL(1704194 >> 16 << 16);
+				// dd = aa;
+				// auto xx = llfr(*frdep(*er3->fud, SizeUSet{1703943}));
+				// EVAL(1703943 >> 16 << 16);
 				// EVAL(*frund(*xx));	
-				// EVAL(*xx);	
-				// auto yy = frvars(*xx);
-				// cout << "[";
-				// for (auto v : SizeSet(yy->begin(),yy->end()))
-				// {
-					// cout << "(" << v << ",";
-					// for (std::size_t i = 0; i < er3->fud->layers.size(); i++)
-					// {
-						// auto& ll = er3->fud->layers[i];
-						// for (auto& tr : ll)
-							// if (tr->derived == v)
-								// cout << " " << i;								
-					// }
-					// cout << "),";
-				// }
-				// cout << "]" << endl;
-				// SizeSizeSetMap bb;
-				// for (std::size_t j = 0; j < z; j++)
-					// for (std::size_t i = 0; i < m; i++)
-					// {
-						// std::size_t u = rr2[pvv2[i]*z + j];
-						// if (u && sl[i]==1703937)
-						// {
-							// for (std::size_t k = 0; k < m; k++)
-							// {
-								// std::size_t u = rr2[pvv2[k]*z + j];
-								// if (u && sl[k]!=1703937)
-								// {
-									// bb[j].insert(sl[k]);
-								// }
-							// }
-						// }
-					// }
-				// EVAL(bb);
+				// // EVAL(*xx);	
+				// // auto yy = frvars(*xx);
+				// // cout << "[";
+				// // for (auto v : SizeSet(yy->begin(),yy->end()))
+				// // {
+					// // cout << "(" << v << ",";
+					// // for (std::size_t i = 0; i < er3->fud->layers.size(); i++)
+					// // {
+						// // auto& ll = er3->fud->layers[i];
+						// // for (auto& tr : ll)
+							// // if (tr->derived == v)
+								// // cout << " " << i;								
+					// // }
+					// // cout << "),";
+				// // }
+				// // cout << "]" << endl;
+				// // SizeSizeSetMap bb;
+				// // for (std::size_t j = 0; j < z; j++)
+					// // for (std::size_t i = 0; i < m; i++)
+					// // {
+						// // std::size_t u = rr2[pvv2[i]*z + j];
+						// // if (u && sl[i]==1703943)
+						// // {
+							// // dev.insert(j);
+							// // for (std::size_t k = 0; k < m; k++)
+							// // {
+								// // std::size_t u = rr2[pvv2[k]*z + j];
+								// // if (u && sl[k]!=1703943)
+								// // {
+									// // bb[j].insert(sl[k]);
+								// // }
+							// // }
+						// // }
+					// // }
+				// // EVAL(bb);
+				// // EVAL(*hrsel(*hr,82817));
+				// // // EVAL(*hrsel(*hr2,82817));
 			// }
 		}
 		
 		if (ok)
 		{
 			ActiveUpdateParameters ppu;
+			// {
+				// eventsA->mapIdEvent[0] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,82817)),eventsA->references);
+				// // for (std::size_t m = 0; m < level1Size; m++)
+				// // {
+					// // auto& activeA = *level1[m];
+					// // activeA.logging = true;
+					// // TRUTH(activeA.update(ppu));
+				// // }
+				// // {
+					// // auto& activeA = *level2.front();	
+					// // activeA.logging = true;
+					// // TRUTH(activeA.update(ppu));
+				// // }
+				// {
+					// auto& activeA = *level1[8];
+					// activeA.logging = true;
+					// TRUTH(activeA.update(ppu));
+				// }
+			// }
 			for (std::size_t i = 0; i < hr->size; i++) 
 			{
 				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,(i % hr->size))),eventsA->references);
@@ -3675,7 +3706,73 @@ int main(int argc, char **argv)
 			for (auto& p : level2.front()->historySlicesSetEvent)
 				aa[p.first] = p.second.size();
 			// EVAL(aa.size());					
-			// EVAL(aa);					
+			// // EVAL(aa);	
+			// std::size_t y = 0;
+			// for (auto& p : aa)	
+				// y+= p.second;	
+			// EVAL(y);				
+			// // for (auto& p : aa)
+				// // if (p.second > 0 && dd[p.first] != aa[p.first])
+				// // {
+					// // EVAL(p.first);
+					// // EVAL(dd[p.first]);
+					// // EVAL(aa[p.first]);
+				// // }
+			// // for (auto& p : dd)
+				// // if (p.second > 0 && dd[p.first] != aa[p.first])
+				// // {
+					// // EVAL(p.first);
+					// // EVAL(dd[p.first]);
+					// // EVAL(aa[p.first]);
+				// // }		
+			// EVAL(dev);
+			// EVAL(level2.front()->historySlicesSetEvent[1703943]);
+			// for (std::size_t m = 0; m < level1Size; m++)
+			// {
+				// auto& activeA = *level1[m];
+				// // auto& llr = activeA.underlyingHistoryRepa;
+				// // auto& lla = activeA.underlyingHistorySparse;
+				// // for (auto& hr : llr)
+				// // {
+					// // EVAL(*hrsel(*hr,82817));
+				// // }
+				// // for (auto& hr : lla)
+				// // {
+					// // auto rr = hr->arr;
+					// // EVAL(rr[82817]);
+				// // }
+				// auto& ha = activeA.historySparse;
+				// auto z = ha->size;
+				// EVAL(m);
+				// for (std::size_t j = 0; j < z; j++)
+				// {
+					// if (!ha->arr[j])
+						// cout << j << ",";
+				// }
+				// cout << endl;
+			// }
+			// {
+				// auto& activeA = *level2.front();	
+				// // auto& llr = activeA.underlyingHistoryRepa;
+				// // auto& lla = activeA.underlyingHistorySparse;
+				// // for (auto& hr : llr)
+				// // {
+					// // EVAL(*hrsel(*hr,82817));
+				// // }
+				// // for (auto& hr : lla)
+				// // {
+					// // auto rr = hr->arr;
+					// // EVAL(rr[82817]);
+				// // }
+				// auto& ha = activeA.historySparse;
+				// auto z = ha->size;
+				// for (std::size_t j = 0; j < z; j++)
+				// {
+					// if (!ha->arr[j])
+						// cout << j << ",";
+				// }
+				// cout << endl;			
+			// }
 			auto hrs = hrshuffle(*hr, (unsigned int)(12345 + hr->size));
 			for (std::size_t i = hr->size; i < hr->size + hrs->size; i++) 
 			{
@@ -3690,6 +3787,7 @@ int main(int argc, char **argv)
 					activeA.update(ppu);
 				}
 			}
+
 			SizeSizeMap bb;
 			for (auto& p : level2.front()->historySlicesSetEvent)
 				bb[p.first] = p.second.size();
