@@ -2824,6 +2824,9 @@ int main(int argc, char **argv)
 			// EVAL(sorted(activeB.underlyingSlicesParent));
 			EVAL(activeB.historySlicesSetEvent);
 			EVAL(activeB.induceSlices);
+			EVAL(activeB.frameUnderlyings);
+			EVAL(activeB.frameHistorys);
+			EVAL(activeB.framesVarsOffset);
 			ECHO(ok = activeB.induce(ActiveInduceParameters()));
 			TRUTH(ok);
 			EVAL(activeB.historySlicesSetEvent);
@@ -2844,6 +2847,11 @@ int main(int argc, char **argv)
 			
 			if (true)
 			{
+				activeB.frameUnderlyings = SizeSet{1,2,3};
+				activeB.frameHistorys = SizeSet{4,5};
+				activeB.framesVarsOffset[1][2] = 3;
+				activeB.framesVarsOffset[1][4] = 5;
+				activeB.framesVarsOffset[2][6] = 7;
 				ActiveIOParameters pp;
 				pp.filename = "test.bin";
 				ECHO(ok = activeB.dump(pp));
@@ -2905,6 +2913,12 @@ int main(int argc, char **argv)
 				EVAL(activeC.induceSlices);				
 				EVAL(activeB.induceSliceFailsSize);				
 				EVAL(activeC.induceSliceFailsSize);				
+				EVAL(activeB.frameUnderlyings);				
+				EVAL(activeC.frameUnderlyings);				
+				EVAL(activeB.frameHistorys);				
+				EVAL(activeC.frameHistorys);				
+				EVAL(activeB.framesVarsOffset);				
+				EVAL(activeC.framesVarsOffset);				
 			}
 
 		}
