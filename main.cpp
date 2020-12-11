@@ -3188,7 +3188,6 @@ int main(int argc, char **argv)
 		EVAL(model+".dr");
 	}
 	
-	
 	if (argc >= 3 && string(argv[1]) == "induce05")
 	{
 		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
@@ -3827,6 +3826,292 @@ int main(int argc, char **argv)
 					c -= (double)p.second *  std::log((double)p.second);
 			EVAL(c);
 			cout << "likelihood c-a-b: " << (c-a-b) << endl;
+		}
+
+	}
+
+	if (argc >= 3 && string(argv[1]) == "induce06")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto erdr = applicationRepasDecompFudSlicedRepa_u;
+		auto drer = decompFudSlicedRepasApplicationRepa_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(induceThreshold);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		auto eventsA = std::make_shared<ActiveEventsRepa>(1);
+		
+		Active activeA(model);
+		activeA.system = std::make_shared<ActiveSystem>();
+		activeA.var = activeA.system->next(activeA.bits);
+		activeA.varSlice = activeA.system->next(activeA.bits);
+		activeA.historySize = hr->size;
+		activeA.induceThreshold = induceThreshold;
+		activeA.logging = true;
+		activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+		activeA.underlyingEventsRepa.push_back(eventsA);
+		{
+			SizeList vv0;
+			{
+				auto& mm = ur->mapVarSize();
+				auto vscan = std::make_shared<Variable>("scan");
+				for (int i = 0; i < 360; i++)
+					vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+			}
+			auto hr1 = std::make_shared<HistoryRepa>();
+			{
+				auto sh = hr->shape;
+				auto& mvv = hr->mapVarInt();
+				auto n1 = vv0.size();
+				hr1->dimension = n1;
+				hr1->vectorVar = new std::size_t[n1];
+				auto vv1 = hr1->vectorVar;
+				hr1->shape = new std::size_t[n1];
+				auto sh1 = hr1->shape;
+				for (std::size_t i = 0; i < n1; i++)
+				{
+					auto v = vv0[i];
+					vv1[i] = v;
+					sh1[i] = sh[mvv[v]];
+				}
+				hr1->evient = true;
+				hr1->size = activeA.historySize;
+				auto z1 = hr1->size;
+				hr1->arr = new unsigned char[z1*n1];
+				auto rr1 = hr1->arr;
+				// memset(rr1, 0, z1*n1);			
+			}
+			activeA.underlyingHistoryRepa.push_back(hr1);
+		}
+		{
+			auto hr = std::make_unique<HistorySparseArray>();
+			{
+				auto z = activeA.historySize;
+				hr->size = z;
+				hr->capacity = 1;
+				hr->arr = new std::size_t[z];		
+			}		
+			activeA.historySparse = std::move(hr);			
+		}
+		activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+
+		activeA.logging = false;
+		ActiveUpdateParameters ppu;
+		for (std::size_t i = 0; i < activeA.historySize; i++) 
+		{
+			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);	
+			activeA.update(ppu);
+		}
+		activeA.logging = true;
+		ActiveInduceParameters ppi;
+		ppi.tint = 4;
+		ppi.wmax = 9;
+		ppi.znnmax = activeA.historySize * 2.0 * 300.0 * 300.0;
+		ppi.znnmax *= ppi.tint;
+		activeA.induce(ppi);			
+
+		// ActiveIOParameters ppio;
+		// ppio.filename = model+".ac";
+		// activeA.dump(ppio);	
+		std::ofstream out(model+".dr", std::ios::binary);
+		systemRepasPersistent(*ur, out); cout << endl;		
+		applicationRepasPersistent(*drer(*activeA.decomp), out);
+		out.close();	
+		EVAL(model+".dr");
+	}
+	
+	if (argc >= 3 && string(argv[1]) == "induce07")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto hrshuffle = historyRepasShuffle_u;
+		auto frund = fudRepasUnderlying;
+		auto drer = decompFudSlicedRepasApplicationRepa_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		size_t induceThreshold = argc >= 5 ? atoi(argv[4]) : 1000;
+		size_t frame01 = argc >= 6 ? atoi(argv[5]) : 0;
+		size_t frame02 = argc >= 7 ? atoi(argv[6]) : 0;
+		size_t frame03 = argc >= 8 ? atoi(argv[7]) : 0;
+		size_t self01 = argc >= 9 ? atoi(argv[8]) : 0;
+		size_t self02 = argc >= 10 ? atoi(argv[9]) : 0;
+		size_t self03 = argc >= 11 ? atoi(argv[10]) : 0;
+		
+		EVAL(model);
+		EVAL(dataset);
+		EVAL(induceThreshold);
+		EVAL(frame01);
+		EVAL(frame02);
+		EVAL(frame03);
+		EVAL(self01);
+		EVAL(self02);
+		EVAL(self03);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		auto eventsA = std::make_shared<ActiveEventsRepa>(1);
+		
+		Active activeA(model);
+		activeA.system = std::make_shared<ActiveSystem>();
+		activeA.var = activeA.system->next(activeA.bits);
+		activeA.varSlice = activeA.system->next(activeA.bits);
+		activeA.historySize = hr->size;
+		activeA.induceThreshold = induceThreshold;
+		activeA.logging = false;
+		activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+		activeA.underlyingEventsRepa.push_back(eventsA);
+		{
+			SizeList vv0;
+			{
+				auto& mm = ur->mapVarSize();
+				auto vscan = std::make_shared<Variable>("scan");
+				for (int i = 330; i < 390; i++)
+					vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+			}
+			auto hr1 = std::make_shared<HistoryRepa>();
+			{
+				auto sh = hr->shape;
+				auto& mvv = hr->mapVarInt();
+				auto n1 = vv0.size();
+				hr1->dimension = n1;
+				hr1->vectorVar = new std::size_t[n1];
+				auto vv1 = hr1->vectorVar;
+				hr1->shape = new std::size_t[n1];
+				auto sh1 = hr1->shape;
+				for (std::size_t i = 0; i < n1; i++)
+				{
+					auto v = vv0[i];
+					vv1[i] = v;
+					sh1[i] = sh[mvv[v]];
+				}
+				hr1->evient = true;
+				hr1->size = activeA.historySize;
+				auto z1 = hr1->size;
+				hr1->arr = new unsigned char[z1*n1];
+				auto rr1 = hr1->arr;
+				// memset(rr1, 0, z1*n1);			
+			}
+			activeA.underlyingHistoryRepa.push_back(hr1);
+		}
+		{
+			auto hr = std::make_unique<HistorySparseArray>();
+			{
+				auto z = activeA.historySize;
+				hr->size = z;
+				hr->capacity = 1;
+				hr->arr = new std::size_t[z];		
+			}		
+			activeA.historySparse = std::move(hr);			
+		}
+		activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+		
+		activeA.frameUnderlyings.insert(frame01);
+		if (frame02) activeA.frameUnderlyings.insert(frame02);
+		if (frame03) activeA.frameUnderlyings.insert(frame03);
+		EVAL(activeA.frameUnderlyings);
+		if (self01) activeA.frameHistorys.insert(self01);
+		if (self02) activeA.frameHistorys.insert(self02);
+		if (self03) activeA.frameHistorys.insert(self03);
+		EVAL(activeA.frameHistorys);
+
+		ActiveUpdateParameters ppu;
+		ActiveInduceParameters ppi;
+		ppi.tint = 4;
+		ppi.wmax = 9;
+		ppi.znnmax = activeA.historySize * 2.0 * 300.0 * 300.0;
+		ppi.znnmax *= ppi.tint;
+		for (std::size_t i = 0; i < activeA.historySize; i++) 
+		{
+			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);	
+			activeA.logging = false;
+			activeA.update(ppu);
+			activeA.logging = false;
+			activeA.induce(ppi);			
+		}
+
+		{
+			SizeSizeMap aa;
+			for (auto& p : activeA.historySlicesSetEvent)
+				aa[p.first] = p.second.size();
+			auto hrs = hrshuffle(*hr, (unsigned int)(12345 + hr->size));
+			for (std::size_t i = hr->size; i < hr->size + hrs->size; i++) 
+			{
+				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hrs,(i % hrs->size))),eventsA->references);
+				activeA.logging = false;
+				activeA.update(ppu);
+			}
+			SizeSizeMap bb;
+			for (auto& p : activeA.historySlicesSetEvent)
+				bb[p.first] = p.second.size();
+			SizeSizeMap cc(aa);
+			for (auto& p : bb)
+				cc[p.first] += p.second;
+			double z = (double)hr->size;
+			double a = z * std::log(z);
+			for (auto& p : aa)
+				if (p.second > 0)
+					a -= (double)p.second *  std::log((double)p.second);
+			EVAL(a);
+			double b = z * std::log(z);
+			for (auto& p : bb)
+				if (p.second > 0)
+					b -= (double)p.second *  std::log((double)p.second);
+			EVAL(b);
+			double c = 2.0 * z * std::log(2.0 * z);
+			for (auto& p : cc)
+				if (p.second > 0)
+					c -= (double)p.second *  std::log((double)p.second);
+			EVAL(c);
+			cout << "likelihood c-a-b: " << (c-a-b) << endl;
+		}
+		
+		{
+			EVAL(activeA.framesVarsOffset);
+			auto er = drer(*activeA.decomp);
+			EVAL(fudRepasSize(*er->fud));
+			EVAL(frund(*er->fud)->size());
+			EVAL(sorted(*frund(*er->fud)));
 		}
 
 	}
