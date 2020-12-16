@@ -4070,6 +4070,7 @@ int main(int argc, char **argv)
 			activeA.logging = false;
 			ok = ok && activeA.induce(ppi);			
 		}
+		EVAL(activeA.varMax());
 
 		if (ok)
 		{
