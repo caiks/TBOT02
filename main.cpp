@@ -4055,21 +4055,23 @@ int main(int argc, char **argv)
 		if (self03) activeA.frameHistorys.insert(self03);
 		EVAL(activeA.frameHistorys);
 
+		bool ok = true;
 		ActiveUpdateParameters ppu;
 		ActiveInduceParameters ppi;
 		ppi.tint = 4;
 		ppi.wmax = 9;
 		ppi.znnmax = activeA.historySize * 2.0 * 300.0 * 300.0;
 		ppi.znnmax *= ppi.tint;
-		for (std::size_t i = 0; i < activeA.historySize; i++) 
+		for (std::size_t i = 0; ok && i < activeA.historySize; i++) 
 		{
 			eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);	
 			activeA.logging = false;
-			activeA.update(ppu);
+			ok = ok && activeA.update(ppu);
 			activeA.logging = false;
-			activeA.induce(ppi);			
+			ok = ok && activeA.induce(ppi);			
 		}
 
+		if (ok)
 		{
 			SizeSizeMap aa;
 			for (auto& p : activeA.historySlicesSetEvent)
