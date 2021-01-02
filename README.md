@@ -14,7 +14,7 @@
 
 ## Download, build and run main executable
 
-To run the non-ROS main executable it is only necessary to install the [AlignmentRepaC repository](https://github.com/caiks/AlignmentRepaC) and its underlying repositories. The `AlignmentRepaC` module requires [modern C++](https://en.cppreference.com/w/) version 17 or later to be installed.
+To run the non-ROS main executable it is only necessary to install the [AlignmentActive repository](https://github.com/caiks/AlignmentActive), the [AlignmentRepaC repository](https://github.com/caiks/AlignmentRepaC) and the underlying repositories. The `AlignmentActive` and the `AlignmentRepaC` modules require [modern C++](https://en.cppreference.com/w/) version 17 or later to be installed.
 
 For example, in Ubuntu bionic (18.04),
 ```
@@ -142,7 +142,7 @@ ros2 run turtlebot3_teleop teleop_keyboard
 ```
 Check that you can steer the turtlebot using the w/x and a/d keys.
 
-Now download and build the `TBOT02` repository and the underlying `rapidjson`, `AlignmentC` and `AlignmentRepaC` repositories -
+Now download and build the `TBOT02` repository and the underlying `rapidjson`, `AlignmentC`, `AlignmentRepaC` and `AlignmentActive` repositories -
 ```
 cd ~/turtlebot3_ws/src
 
@@ -157,10 +157,10 @@ cd ~/turtlebot3_ws/src/TBOT02_ws
 cat data009a* >data009.bin
 
 cd ~/turtlebot3_ws/src
-mkdir -p AlignmentC_build AlignmentRepaC_build
-cd ~/turtlebot3_ws/src/AlignmentRepaC_build
-cmake -DCMAKE_BUILD_TYPE=RELEASE ../AlignmentRepaC
-make AlignmentC AlignmentRepaC
+mkdir -p AlignmentC_build AlignmentRepaC_build AlignmentActive_build
+cd ~/turtlebot3_ws/src/AlignmentActive_build
+cmake -DCMAKE_BUILD_TYPE=RELEASE ../AlignmentActive
+make AlignmentC AlignmentRepaC AlignmentActive
 
 cd ~/turtlebot3_ws/src/TBOT02
 cp CMakeLists_ros.txt CMakeLists.txt
@@ -298,13 +298,13 @@ ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 1.96486e+06
 ```
 Both `data009` and `model026` have been copied over to the [TBOT02 workspace repository](https://github.com/caiks/TBOT02_ws).
 
-Now let us consider how we might be able to *induce* a *model* with a similar *likelihood* dynamically, i.e. with *events* streaming in in real time. 
+Now let us consider how we might be able to *induce* a *model* with a similar *likelihood* dynamically, i.e. with *events* streaming in in real time. This functionality is implemented in the `AlignmentActive` repository.
 
-The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory so we will only be able to keep a fixed maximum *size* of past *events* and these will be at the *substrate level*. A new *event* will be appended to the past *history* in sequence until the maximum *size* is reached. After that the new *event* will overwrite the oldest *event* using clock arithmetic.
+The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory so we will only be able to keep a fixed maximum *size* of past *events*. A new *event* will be appended to the past *history* in sequence until the maximum *size* is reached. After that the new *event* will overwrite the oldest *event* using clock arithmetic.
 
-In order to minimise the memory required for large *models*, only a leaf *slice* of past *events* will be *shuffled* and have the *underlying model levels applied* (if necessary) in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the leaf *slice variable* for each of the past *events* and the corresponding inverse map from leaf *slice variable* to its set of *events*. 
+In order to minimise the memory required for large *models*, only a leaf *slice* of past *events* will be selected and the resultant *slice history* *shuffled* in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the leaf *slice variable* for each of the past *events* and the corresponding inverse map from leaf *slice variable* to its set of *events*. 
 
-When a new *event* arrives, the entire *model* will be *applied* to it to determine its *slice*. The new *event* will be appended to the past *history* and the *slice* list and map will be updated. If the current *slice size* exceeds some threshold the *slice history* will be *modelled* by the *layerer*, and the new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
+When a new *event* arrives, the *model* will be *applied* to it to determine its *slice*. Instead of *applying* the entire *model*, only *fud* along the *in-slice* path will be *applied*, thus avoiding the exponential increase in *application* time as the *models* become larger. The new *event* will be appended to the past *history* and the *slice* list and map will be updated. If the current *slice size* exceeds some threshold the *slice history* will be *modelled* by the *layerer*, and the new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
 
 Now let us consider what the *slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
 ```
