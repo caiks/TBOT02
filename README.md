@@ -298,25 +298,25 @@ ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 1.96486e+06
 ```
 Both `data009` and `model026` have been copied over to the [TBOT02 workspace repository](https://github.com/caiks/TBOT02_ws).
 
-Now let us consider how we might be able to *induce* a *model* with a similar *likelihood* dynamically, i.e. with *events* streaming in in real time. This is the functionality which is implemented in the `AlignmentActive` repository.
+Now let us consider how we might be able to *induce* a *model* with a similar *likelihood* dynamically, i.e. with a stream of incoming *events* in real time. This is the functionality which is implemented in the `AlignmentActive` repository.
 
-The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory so we will only be able to keep a fixed maximum *size* of past *events*. A new *event* will be appended to the past *history* in sequence until the maximum *size* is reached. After that the new *event* will overwrite the oldest *event* using clock arithmetic.
+The accumulated *history* of a dynamic system would eventually use impracticable amounts of memory, so we will only be able to keep a fixed maximum *size* of past *events*. A new *event* will be appended to the past *history* in sequence until the maximum *size* is reached. After that the new *event* will overwrite the oldest *event* using clock arithmetic.
 
 In order to minimise the computation required to *induce* large *models*, only a leaf *slice* of past *events* will be selected, and the resultant *slice history* *shuffled*, in preparation for *fud induction* by the *layerer*. We must therefore keep a list of the leaf *slice variables* for each of the past *events* and the corresponding inverse map from leaf *slice variable* to its set of *events*. 
 
-After an incoming *event* has been appended to the past *history*, the *model* will be *applied* to it to determine its *slice*. Instead of *applying* the entire *model*, only *fuds* along the *in-slice* path will be *applied*, thus avoiding the exponential increase in *application* time as the *models* become larger. Then the *slice* list and map will be updated with the new *slice variable*. If the current *slice size* exceeds some threshold the current *slice history* will be *modelled* by the *layerer*, and resultant new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
+After an incoming *event* has been appended to the past *history*, the *model* will be *applied* to it to determine its *slice*. Instead of *applying* the entire *model*, only *fuds* along the *in-slice* path will be *applied*, thus avoiding the exponential increase in *application* time as the *models* become larger. Then the *slice* list and map will be updated with the new *slice variable*. If the current *slice size* exceeds a certain threshold the current *slice history* will be *modelled* by the *layerer*, and the resultant new *fud*, if any, will be added to the *model*. The *events* of the *slice history* will now have new *slice variables derived* from the *fud* and the parent *slice*, so the past *slice* list and map will be updated with the new children *slices*.
 
 Together the structure of the *underlying history*, the *fud decomposition* and the *slice* list is called an active. The active also has references to *event* queues for each of the streams of incoming real-time *events*. The processing of new *events* in the *underlying event* queues is called update. The other main process is induce, in which new *model* is added when a leaf *slice size* exceeds the *induce* threshold. In addition, an active has a lock so that the active structure remains consistent during concurrent updates and induces.
 
-We can see that the *slice* list is itself a compact *history* of the *slice variables* of the *model's* *slice* tree. So the active can also have a reference to an outgoing *event* queue for its own *slice history*. Now we can create *levels* of actives with the *underlying event* queues of higher *level* actives being either the *slice event* queues of lower *level* actives or the *event* queues of the *substrate*.
+We can see that the *slice* list is itself a compact *history* of the *slice variables* of the *model's* *slice* tree. So the active can also have a reference to an outgoing *event* queue for its own *slice history*. Now we can create *levels* of actives with the *underlying event* queues of higher *level* actives being either (a) the *event* queues of the *substrate* or (b) the *slice event* queues of lower *level* actives.
 
-In order to allow different actives to update or induce concurrently, we must synchronise the issuing of new *variables* so that they are unique everywhere. To minimise the time waiting for locks, the *variable* are issued in blocks, so that an active need only request a new block of *variables* when it is full. A common active *system* controls the issuing of the blocks.
+In order to allow different actives to update or induce concurrently, we must synchronise the issuing of new *variables* so that they are unique everywhere. To minimise the time waiting for locks, the *variables* are issued in blocks, so that an active need only request a new block of *variables* when the current block has been fully assigned. A common active *system* controls the issuing of the blocks.
 
-Actives are designed to process chronological streams of *events*. The past *events* are known up to the *underlying history size*, so time-wise *frames* of past *events* can be added to the current *event* by remapping the *variables* of the past *frames*. In this way, dynamic *alignments* can be *modelled*. While *modelling* of past *frames* is possible without actives, as we saw in [TBOT01](https://github.com/caiks/TBOT01#Timewise), this requires the duplication and remapping of the entire *model*, and a duplication of *underlying substrate*, for each *frame*, which becomes impracticable for large *models*. In addition, actives also allow past *frames* of the *slice history* itself to be added to the current *event*. That is, recurrent past self *frames* are allowed. This recursive functionality would be difficult to implement without active *history*.
+Actives are designed to process chronological streams of *events*. The past *events* are known up to the *underlying history size*, so time-wise *frames* of past *events* can be added to the current *event* by remapping the *variables* of the past *frames*. In this way, dynamic *alignments* can be *modelled*. Although *modelling* of past *frames* is possible without actives, as we saw in [TBOT01](https://github.com/caiks/TBOT01#Timewise), this requires the duplication and remapping of the entire *model*, and a duplication of *underlying substrate*, for each *frame*. This duplication becomes impracticable for large *models*. In addition, actives also allow past *frames* of the *slice history* itself to be added to the current *event*. That is, recurrent past self *frames* are allowed. This recursive functionality would be difficult to implement without active *history*.
 
-discounting and callbacks
+Given the current *slice*, the active *underlying history* enables us to look forward from each of the past *events* of the *slice* to see the succeeding *events*. We can therefore determine the consequences of different actions. That is, given some definition of a goal, we can calculate a goodness for each *value* of the action *variable*. We do this by selecting the subset of the *events* of the *slice* having that action *value* and then for each discounting by the time taken to the attainment of the goal. The sum of these forms the goodness for that action *value*. In this way we can choose the present motor action that is expected to be the quickest to obtain the goal, based on the *model's classification* of past experiences.
 
-Now let us consider what the *slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
+Now let us consider what the *induce slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
 ```
 cd ~/TBOT02_ws
 
@@ -569,7 +569,98 @@ Size|Diagonal|Likelihood
 100,000|28.0|76,387
 172,301|31.9|76,076
 
-We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. The reason for this is probably because the *1-level-model* was *modelled* with non-sequential *history* - each  *event* consisted of 60 *scan variables* taken at random from the 360 of the *substrate*. The *2-level-model* is *modelled* with sequential *history*, so it is only after around 2,000 records or 8 minutes that all of the rooms havee been visited. *Active modelling* may well generate reasonable *models* with small thresholds of a few hundred *events*.
+We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. The reason for this is probably because the *1-level-model* was *modelled* with non-sequential *history* - each  *event* consisted of 60 *scan variables* taken at random from the 360 of the *substrate*. The *2-level-model* is *modelled* with sequential *history*, so it is only after around 2,000 records or 8 minutes that all of the rooms havee been visited. Although *active modelling* with small thresholds of a few hundred *events* may produce a root *fud* with a low *alignment*, that is not to say that a large *model* with many nodes, though lopsided, might not have high *likelihood* nonetheless. In general, however, a large initial threshold looks desirable.
 
+Let us simulate the dynamic *modelling* of *model* 26. First note that *model* 26 was obtained from a non-sequential *history* of random regions of 60 degrees field-of-view. This *history* is not suitable for a stream of *events*, so we will consider only the fixed field-of-view between 330 degrees and 29 degrees. The threshold *slice size* is 7,000. This figure is chosen because the trailing *slice* in *model* 26 is 7,337.
+
+In test `induce03` we stream the *events* of `data009` into a single active, updating and then inducing for each *event*,
+
+```
+cd ~/TBOT02_ws
+
+/usr/bin/time -v ./main induce03 model043 data009 7000 >model043.log 2>&1
+...
+model043	update apply	event id: 0	history id: 0	slice: 0	slice size: 1	time 0.0002089s
+model043	update apply	event id: 1	history id: 1	slice: 0	slice size: 2	time 5e-06s
+...
+model043	update apply	event id: 6998	history id: 6998	slice: 0	slice size: 6999	time 1.5e-06s
+model043	update apply	event id: 6999	history id: 6999	slice: 0	slice size: 7000	time 1.6e-06s
+model043	induce copy	slice: 0	slice size: 7000	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65536	time 0.0016088s
+model043	induce model	repa dimension: 60	sparse dimension: 0
+model043	induce model	dimension: 60	size: 7000
+model043	induce model	der vars algn density: 2389.93	impl bi-valency percent: 40.6942	der vars cardinality: 2	fud cardinality: 2
+model043	induce model	time 0.0753538s
+model043	induce update	slice: 0	parent slice: 0	children cardinality: 8	fud size: 10	fud cardinality: 1	model cardinality: 10	time 0.0017929s
+model043	update apply	event id: 7000	history id: 7000	slice: 131072	slice size: 2350	time 8.8e-06s
+model043	update apply	event id: 7001	history id: 7001	slice: 131072	slice size: 2351	time 5.1e-06s
+...
+model043	update apply	event id: 170899	history id: 170899	slice: 131333	slice size: 6999	time 4.7e-06s
+model043	update apply	event id: 170900	history id: 170900	slice: 131333	slice size: 7000	time 4.9e-06s
+model043	induce copy	slice: 131333	slice size: 7000	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65888	time 0.0014435s
+model043	induce model	repa dimension: 40	sparse dimension: 0
+model043	induce model	dimension: 40	size: 7000
+model043	induce model	der vars algn density: 594.221	impl bi-valency percent: 4.3358	der vars cardinality: 3	fud cardinality: 14
+model043	induce model	time 0.393112s
+model043	induce update	slice: 131333	parent slice: 0	children cardinality: 6	fud size: 20	fud cardinality: 36	model cardinality: 635	time 0.0038211s
+model043	update apply	event id: 170901	history id: 170901	slice: 131339	slice size: 6824	time 3.3e-05s
+model043	update apply	event id: 170902	history id: 170902	slice: 131339	slice size: 6825	time 1.26e-05s
+...
+model043	update apply	event id: 172203	history id: 172203	slice: 131327	slice size: 12204	time 4.75e-05s
+model043	induce copy	slice: 131327	slice size: 12204	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65902	time 0.0030067s
+model043	induce model	repa dimension: 11	sparse dimension: 0
+model043	induce model	dimension: 11	size: 12204
+model043	induce model	no alignment
+model043	induce model	time 0.0070914s
+model043	induce update fail	slice: 131327	slice size: 12204	time 1.3e-06s
+model043	update apply	event id: 172204	history id: 172204	slice: 131223	slice size: 166	time 1.77e-05s
+model043	update apply	event id: 172205	history id: 172205	slice: 131283	slice size: 4813	time 1.38e-05s
+...
+model043	update apply	event id: 172299	history id: 172299	slice: 131266	slice size: 1366	time 9.4e-06s
+model043	update apply	event id: 172300	history id: 172300	slice: 131266	slice size: 1367	time 4.3e-06s
+```
+We can see that at the 7000th *event* the induce threshold is crossed and the root *fud* is *modelled*, having a *diagonal* of `40.7`. The *model* 43 eventually has 36 *fuds*. The last *fud* only has a diagonal of `4.3`. Note that there is a very large *slice* of 12,204 *events* which has no *alignment* - presumably because the turtlebot is looking into empty space up to the range of the lidar.
+
+The *likelihood* of *model* 43 with no *shuffle scaling* is 190,568 -
+```
+./main entropy model043 1 data009
+model: model043
+mult: 1
+dataset: data009
+auto z = hr->size
+z: 172301
+auto v = z * mult
+v: 172301
+fudRepasSize(*dr->fud): 635
+frder(*dr->fud)->size(): 234
+frund(*dr->fud)->size(): 60
+treesSize(*dr->slices): 269
+treesLeafElements(*dr->slices)->size(): 234
+ent(*aa) * z: 682079
+ent(*bb) * v: 511291
+ent(*add(*aa,*bb)) * (z+v): 1.38394e+06
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 190568
+```
+This may be compared to a *likelihood* of 197,025 for *model* 26 with the same *scaling*,
+```
+./main entropy_region model026 1 data009 1
+model: model026
+mult: 1
+dataset: data009
+auto z = hr->size
+z: 172301
+auto v = z * mult
+v: 172301
+fudRepasSize(*dr->fud): 2209
+frder(*dr->fud)->size(): 872
+frund(*dr->fud)->size(): 60
+treesSize(*dr->slices): 998
+treesLeafElements(*dr->slices)->size(): 872
+ent(*aa) * z: 892604
+ent(*bb) * v: 620447
+ent(*add(*aa,*bb)) * (z+v): 1.71008e+06
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 197025
+```
+That is, the dynamic *model* is nearly as *likely* as the static *model*.
 
 Let us simulate the dynamic *modelling* of *model* 27. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
+
