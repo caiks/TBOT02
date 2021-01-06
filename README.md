@@ -620,6 +620,8 @@ model043	update apply	event id: 172300	history id: 172300	slice: 131266	slice si
 ```
 We can see that at the 7000th *event* the induce threshold is crossed and the root *fud* is *modelled*, having a *diagonal* of `40.7`. The *model* 43 eventually has 36 *fuds*. The last *fud* only has a diagonal of `4.3`. Note that there is a very large *slice* of 12,204 *events* which has no *alignment* - presumably because the turtlebot is looking into empty space up to the range of the lidar.
 
+After all of the *events* are streamed the active is dumped and the *model* is saved separately as an `ApplicationRepa`.
+
 The *likelihood* of *model* 43 with no *shuffle scaling* is 190,568 -
 ```
 ./main entropy model043 1 data009
@@ -662,5 +664,322 @@ ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 197025
 ```
 That is, the dynamic *model* is nearly as *likely* as the static *model*.
 
-Let us simulate the dynamic *modelling* of *model* 27. We will begin with a threshold *slice size* of 1000 and terminate when we obtain 127 *fuds*.
+To see the effect of the induce threshold, in test `induce04` we again stream the *events* of `data009` into a single active, but this time update all of them without induce. Then a single induce creates the entire *model*,
+
+```
+/usr/bin/time -v ./main induce04 model044 data009 7000 >model044.log 2>&1
+...
+model044	induce copy	slice: 0	slice size: 172301	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65536	time 0.0498034s
+model044	induce model	repa dimension: 60	sparse dimension: 0
+model044	induce model	dimension: 60	size: 172301
+model044	induce model	der vars algn density: 59404.8	impl bi-valency percent: 41.167	der vars cardinality: 2	fud cardinality: 2
+model044	induce model	time 0.798991s
+model044	induce update	slice: 0	parent slice: 0	children cardinality: 9	fud size: 11	fud cardinality: 1	model cardinality: 11	time 0.0377803s
+...
+model044	induce copy	slice: 131238	slice size: 12217	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65794	time 0.0030488s
+model044	induce model	repa dimension: 12	sparse dimension: 0
+model044	induce model	dimension: 12	size: 12217
+model044	induce model	no alignment
+model044	induce model	time 0.0073799s
+model044	induce update fail	slice: 131238	slice size: 12217	time 1.4e-06s
+...
+model044	induce copy	slice: 131348	slice size: 7004	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65988	time 0.001416s
+model044	induce model	repa dimension: 8	sparse dimension: 0
+model044	induce model	dimension: 8	size: 7004
+model044	induce model	der vars algn density: 7.61114	impl bi-valency percent: 0.054349	der vars cardinality: 3	fud cardinality: 3
+model044	induce model	time 0.0188726s
+model044	induce update	slice: 131348	parent slice: 0	children cardinality: 6	fud size: 9	fud cardinality: 36	model cardinality: 742	time 0.0019504s
+model044	induce copy	slice: 131357	slice size: 7000	repa dimension: 60	sparse capacity: 0	sparse paths: 0	variable: 65991	time 0.0013985s
+model044	induce model	repa dimension: 5	sparse dimension: 0
+model044	induce model	dimension: 5	size: 7000
+model044	induce model	no alignment
+model044	induce model	time 0.0040473s
+model044	induce update fail	slice: 131357	slice size: 7000	time 1.4e-06s
+```
+The root *fud* is *modelled* on the entire *history* of 172,301 *events*. It has a *diagonal* of `41.2`. The *model* 44 also has 36 *fuds*. The last *fud* only has a diagonal of `0.05`. Again, there is a very large *slice* of 12,217 *events* which has no *alignment*. 
+
+The *likelihood* of *model* 44 is 194,298 -
+```
+./main entropy model044 1 data009
+model: model044
+mult: 1
+dataset: data009
+auto z = hr->size
+z: 172301
+auto v = z * mult
+v: 172301
+fudRepasSize(*dr->fud): 742
+frder(*dr->fud)->size(): 252
+frund(*dr->fud)->size(): 60
+treesSize(*dr->slices): 287
+treesLeafElements(*dr->slices)->size(): 252
+ent(*aa) * z: 672865
+ent(*bb) * v: 525898
+ent(*add(*aa,*bb)) * (z+v): 1.39306e+06
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 194298
+```
+So *model* 44 is very similar to *model* 43, confirming that dynamic *modelling* is not much less efficient than static.
+
+We can test a small induce threshold of 100. Now the *likelihood* is 221,664 -
+```
+/usr/bin/time -v ./main induce04 model045 data009 100 >model045.log 2>&1
+
+./main entropy model045 1 data009
+model: model045
+mult: 1
+dataset: data009
+auto z = hr->size
+z: 172301
+auto v = z * mult
+v: 172301
+fudRepasSize(*dr->fud): 33249
+frder(*dr->fud)->size(): 6853
+frund(*dr->fud)->size(): 60
+treesSize(*dr->slices): 8671
+treesLeafElements(*dr->slices)->size(): 6853
+ent(*aa) * z: 1.27283e+06
+ent(*bb) * v: 717772
+ent(*add(*aa,*bb)) * (z+v): 2.21227e+06
+ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 221664
+```
+
+Let us simulate the dynamic *modelling* of the *2-level* *model* 27. In test `induce05` there are 12 *level* 1 actives each with a fixed non-overlapping field-of-view of 30 degrees, and a *level* 2 active. We begin with an induce threshold *slice size* of 1,000, except for an initial induce threshold *slice size* for *level* 2 of 30,000,
+```
+/usr/bin/time -v ./main induce05 model046 data009 1000 30000 >model046.log 2>&1
+
+./main load05 model046 data009 12
+model: model046
+dataset: data009
+level1Size: 12
+hr->size: 172301
+ur->listVarSizePair.size(): 366
+model046_1_00   load    file name: model046_1_00.ac     time 0.0968937s
+activeA.decomp->fudRepasSize: 2888
+activeA.decomp->fuds.size(): 165
+model046_1_01   load    file name: model046_1_01.ac     time 0.24568s
+activeA.decomp->fudRepasSize: 2711
+activeA.decomp->fuds.size(): 161
+model046_1_02   load    file name: model046_1_02.ac     time 0.130942s
+activeA.decomp->fudRepasSize: 2296
+activeA.decomp->fuds.size(): 132
+model046_1_03   load    file name: model046_1_03.ac     time 0.138418s
+activeA.decomp->fudRepasSize: 2125
+activeA.decomp->fuds.size(): 118
+model046_1_04   load    file name: model046_1_04.ac     time 0.111514s
+activeA.decomp->fudRepasSize: 2437
+activeA.decomp->fuds.size(): 134
+model046_1_05   load    file name: model046_1_05.ac     time 0.123201s
+activeA.decomp->fudRepasSize: 2702
+activeA.decomp->fuds.size(): 165
+model046_1_06   load    file name: model046_1_06.ac     time 0.0853729s
+activeA.decomp->fudRepasSize: 2879
+activeA.decomp->fuds.size(): 167
+model046_1_07   load    file name: model046_1_07.ac     time 0.0832004s
+activeA.decomp->fudRepasSize: 2767
+activeA.decomp->fuds.size(): 162
+model046_1_08   load    file name: model046_1_08.ac     time 0.114457s
+activeA.decomp->fudRepasSize: 2432
+activeA.decomp->fuds.size(): 143
+model046_1_09   load    file name: model046_1_09.ac     time 0.0596965s
+activeA.decomp->fudRepasSize: 2264
+activeA.decomp->fuds.size(): 126
+model046_1_10   load    file name: model046_1_10.ac     time 0.0436621s
+activeA.decomp->fudRepasSize: 2605
+activeA.decomp->fuds.size(): 147
+model046_1_11   load    file name: model046_1_11.ac     time 0.0522163s
+activeA.decomp->fudRepasSize: 2595
+activeA.decomp->fuds.size(): 165
+model046_2      load    file name: model046_2.ac        time 0.0581269s
+activeA.underlyingEventUpdateds: {172300}
+activeA.historySize: 172301
+activeA.historyOverflow: true
+activeA.historyEvent: 0
+activeA.decomp->fudRepasSize: 2752
+activeA.decomp->fuds.size(): 139
+fudRepasSize(*er1->fud): 30701
+frder(*er1->fud)->size(): 9183
+frund(*er1->fud)->size(): 360
+treesSize(*er1->slices): 10956
+treesLeafElements(*er1->slices)->size(): 9183
+fudRepasSize(*er2->fud): 2752
+frder(*er2->fud)->size(): 1243
+frund(*er2->fud)->size(): 349
+treesSize(*er2->slices): 1381
+treesLeafElements(*er2->slices)->size(): 1243
+fudRepasSize(*er3->fud): 6299
+frder(*er3->fud)->size(): 1243
+frund(*er3->fud)->size(): 360
+treesSize(*er3->slices): 1381
+treesLeafElements(*er3->slices)->size(): 1243
+a: 1.03356e+06
+b: 496376
+c: 1.73741e+06
+likelihood c-a-b: 207472
+```
+We can see that each of the *level* 1 actives has around 150 *fuds*. The *level* 1 active has 139 *fuds*. The overall *likelihood* of *model* 46 is 207,472. This may be compared to a *likelihood* for *model* 27 of 231,911.
+
+In *model* 49, the *level* 1 actives have an initial threshold of 10,000 and thereafter 200, and the *level* 2 active has an initial threshold of 30,000 and thereafter 50,
+```
+/usr/bin/time -v ./main induce05 model049 data009 50 30000 12 1 200 10000 >model049.log 2>&1
+
+./main load05 model049 data009 12
+model: model049
+dataset: data009
+level1Size: 12
+hr->size: 172301
+ur->listVarSizePair.size(): 366
+model049_1_00   load    file name: model049_1_00.ac     time 0.0641369s
+activeA.decomp->fudRepasSize: 12308
+activeA.decomp->fuds.size(): 738
+model049_1_01   load    file name: model049_1_01.ac     time 0.159909s
+activeA.decomp->fudRepasSize: 11693
+activeA.decomp->fuds.size(): 699
+model049_1_02   load    file name: model049_1_02.ac     time 0.0737249s
+activeA.decomp->fudRepasSize: 11170
+activeA.decomp->fuds.size(): 643
+model049_1_03   load    file name: model049_1_03.ac     time 0.0758972s
+activeA.decomp->fudRepasSize: 10004
+activeA.decomp->fuds.size(): 566
+model049_1_04   load    file name: model049_1_04.ac     time 0.0889874s
+activeA.decomp->fudRepasSize: 10844
+activeA.decomp->fuds.size(): 643
+model049_1_05   load    file name: model049_1_05.ac     time 0.07918s
+activeA.decomp->fudRepasSize: 12524
+activeA.decomp->fuds.size(): 744
+model049_1_06   load    file name: model049_1_06.ac     time 0.0731357s
+activeA.decomp->fudRepasSize: 13824
+activeA.decomp->fuds.size(): 787
+model049_1_07   load    file name: model049_1_07.ac     time 0.085181s
+activeA.decomp->fudRepasSize: 11356
+activeA.decomp->fuds.size(): 726
+model049_1_08   load    file name: model049_1_08.ac     time 0.074666s
+activeA.decomp->fudRepasSize: 10267
+activeA.decomp->fuds.size(): 619
+model049_1_09   load    file name: model049_1_09.ac     time 0.0631516s
+activeA.decomp->fudRepasSize: 9754
+activeA.decomp->fuds.size(): 546
+model049_1_10   load    file name: model049_1_10.ac     time 0.0782104s
+activeA.decomp->fudRepasSize: 10985
+activeA.decomp->fuds.size(): 645
+model049_1_11   load    file name: model049_1_11.ac     time 0.0947589s
+activeA.decomp->fudRepasSize: 11778
+activeA.decomp->fuds.size(): 695
+model049_2      load    file name: model049_2.ac        time 0.171182s
+activeA.underlyingEventUpdateds: {172300}
+activeA.historySize: 172301
+activeA.historyOverflow: true
+activeA.historyEvent: 0
+activeA.decomp->fudRepasSize: 53407
+activeA.decomp->fuds.size(): 3287
+fudRepasSize(*er1->fud): 136507
+frder(*er1->fud)->size(): 29518
+frund(*er1->fud)->size(): 360
+treesSize(*er1->slices): 37557
+treesLeafElements(*er1->slices)->size(): 29518
+fudRepasSize(*er2->fud): 53407
+frder(*er2->fud)->size(): 8917
+frund(*er2->fud)->size(): 7709
+treesSize(*er2->slices): 12203
+treesLeafElements(*er2->slices)->size(): 8917
+fudRepasSize(*er3->fud): 116431
+frder(*er3->fud)->size(): 8917
+frund(*er3->fud)->size(): 360
+treesSize(*er3->slices): 12203
+treesLeafElements(*er3->slices)->size(): 8917
+a: 1.49688e+06
+b: 618212
+c: 2.33977e+06
+likelihood c-a-b: 224685
+```
+The *likelihood* of 224,685 is closer to that of *model* 27. The trailing *model* 27 *slice size* is 62. This demonstrates that *multi-level* dynamic *modelling* is also not much less efficient than static.
+
+Now let us see the effect of adding *frames*. First we will consider the *level* 1 static *model* 26 (*likelihood* 197,025) and dynamic *model* 43 (*likelihood* 190,568) again. Without any *frames*, test `induce07` reproduces *model* 43,
+
+```
+cd ~/TBOT02_ws
+./main induce07 model052 data009 7000
+...
+frame01: 0
+frame02: 0
+frame03: 0
+self01: 0
+self02: 0
+self03: 0
+...
+likelihood c-a-b: 190568
+...
+```
+If we add one *frame* 12 *events* before the present, we see a small increase in *likelihood* to 191,362 -
+```
+./main induce07 model052 data009 7000 0 12
+...
+frame01: 0
+frame02: 12
+frame03: 0
+self01: 0
+self02: 0
+self03: 0
+...
+likelihood c-a-b: 191362
+...
+```
+But adding two *frames* appears to reduce it to 190,965 -
+```
+./main induce07 model052 data009 7000 0 6 12
+...
+frame01: 0
+frame02: 6
+frame03: 12
+self01: 0
+self02: 0
+self03: 0
+...
+likelihood c-a-b: 190965
+```
+We can continue to experiment with up to 3 *underlying frames* and up to 3 reflexive *frames*, summarised in this table,
+
+frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
+---|---|---|---|---|---|---
+0||||||190,568
+0|12|||||191,362
+0|6|12||||190,965
+0|1|12||||188,684
+12|13|14||||190,415
+0|1|2||||189,463
+0|||2|||191,337
+0|||12|||188,750
+0|1|3|6|10|15|195,871
+0|1|3|6|10||195,580
+0|1|3|6|||191,785
+0|1|3||||191,370
+0|1|||||180,998
+0|2|||||169,789
+0|4|||||172,005
+0|8|||||176,058
+0|16|||||192,368
+0|32|||||196,969
+0|||6|10|15|191,851
+0|2|3|8|16|32|192,746
+0|16|32|8|16|32|194,707
+0|16|32||||196,024
+0|48|||||193,726
+0|32||2|||195,051
+0|32||32|||191,185
+0|||32|||191,018
+0|32||6|||196,731
+0|32||6|10||195,652
+0|32||6|10|15|198,154
+0|32|48|6|10|15|197,487
+0|32|0|8|16|24|196,708
+0|32||10|15||197,026
+
+These are the key results -
+frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
+---|---|---|---|---|---|---
+0||||||190,568
+0|1|3|6|10|15|195,871
+0|32|||||196,969
+0|32||6|10|15|198,154
+
+We can see in the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the approach and then the turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (or 8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general self *frames* appear to be more useful at longer times, whereas *underlying frames* appear to be more specific. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement.
 
