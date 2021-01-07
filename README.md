@@ -569,7 +569,7 @@ Size|Diagonal|Likelihood
 100,000|28.0|76,387
 172,301|31.9|76,076
 
-We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. The reason for this is probably because the *1-level-model* was *modelled* with non-sequential *history* - each  *event* consisted of 60 *scan variables* taken at random from the 360 of the *substrate*. The *2-level-model* is *modelled* with sequential *history*, so it is only after around 2,000 records or 8 minutes that all of the rooms havee been visited. Although *active modelling* with small thresholds of a few hundred *events* may produce a root *fud* with a low *alignment*, that is not to say that a large *model* with many nodes, though lopsided, might not have high *likelihood* nonetheless. In general, however, a large initial threshold looks desirable.
+We can see that for the *2-level model* there is a jump in *likelihood* between 1,000 records and 2,000 records. There is another jump later on between 20,000 records and 100,000 records. Unlike the *1-level model* the *likelihood*  of the *2-level model* generally increases with *size*, at least at the root *fud*. The reason for this is probably because the *1-level-model* was *modelled* with non-sequential *history* - each  *event* consisted of 60 *scan variables* taken at random from the 360 of the *substrate*. The *2-level-model* is *modelled* with sequential *history*, so it is only after around 2,000 records or 8 minutes that all of the rooms have been visited. Although *active modelling* with small thresholds of a few hundred *events* may produce a root *fud* with a low *alignment*, that is not to say that a large *model* with many nodes, though lopsided, might not have high *likelihood* nonetheless. In general, however, a large initial threshold looks desirable.
 
 Let us simulate the dynamic *modelling* of *model* 26. First note that *model* 26 was obtained from a non-sequential *history* of random regions of 60 degrees field-of-view. This *history* is not suitable for a stream of *events*, so we will consider only the fixed field-of-view between 330 degrees and 29 degrees. The threshold *slice size* is 7,000. This figure is chosen because the trailing *slice* in *model* 26 is 7,337.
 
@@ -618,9 +618,9 @@ model043	update apply	event id: 172205	history id: 172205	slice: 131283	slice si
 model043	update apply	event id: 172299	history id: 172299	slice: 131266	slice size: 1366	time 9.4e-06s
 model043	update apply	event id: 172300	history id: 172300	slice: 131266	slice size: 1367	time 4.3e-06s
 ```
-We can see that at the 7000th *event* the induce threshold is crossed and the root *fud* is *modelled*, having a *diagonal* of `40.7`. The *model* 43 eventually has 36 *fuds*. The last *fud* only has a diagonal of `4.3`. Note that there is a very large *slice* of 12,204 *events* which has no *alignment* - presumably because the turtlebot is looking into empty space up to the range of the lidar.
+We can see that at the 7000th *event* the induce threshold is crossed and the root *fud* is *modelled*, having a *diagonal* of `40.7`. *Model* 43 eventually has 36 *fuds*. The last *fud* only has a diagonal of `4.3`. Note that there is a very large *slice* of 12,204 *events* which has no *alignment* - presumably because the turtlebot is looking into empty space up to the range of the lidar.
 
-After all of the *events* are streamed the active is dumped and the *model* is saved separately as an `ApplicationRepa`.
+After all of the *events* are streamed, the active is dumped and the *model* is saved separately as an `ApplicationRepa`.
 
 The *likelihood* of *model* 43 with no *shuffle scaling* is 190,568 -
 ```
@@ -981,5 +981,25 @@ frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
 0|32|||||196,969
 0|32||6|10|15|198,154
 
-We can see in the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the approach and then the turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (or 8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general self *frames* appear to be more useful at longer times, whereas *underlying frames* appear to be more specific. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement.
+We can see in the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the approach and then the turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general self *frames* appear to be more useful at longer times, whereas *underlying frames* appear to be more specific. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement.
 
+Lastly, consider the effect of *frames* on the *2-level model* 49,
+```
+/usr/bin/time -v ./main induce08 model056 data009 50 30000 12 1 200 10000 0 1 3 6 10 15 >model056.log 2>&1
+...
+likelihood c-a-b: 225360
+...
+
+/usr/bin/time -v ./main induce08 model057 data009 50 30000 12 1 200 10000 0 32 0 6 10 15 >model057.log 2>&1
+...
+TODO
+...
+```
+frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
+---|---|---|---|---|---|---
+0||||||224,685
+0|1|3|6|10|15|225,360
+0|32||6|10|15|TODO
+
+The *likelihood* of *model* 49 is 224,685. 
+In the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is a small increase to a *likelihood* of 225,360. In the case of *frames* 0 (now), 32 (8s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), TODO.
