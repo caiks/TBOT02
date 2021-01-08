@@ -743,7 +743,7 @@ ent(*add(*aa,*bb)) * (z+v): 2.21227e+06
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 221664
 ```
 
-Let us simulate the dynamic *modelling* of the *2-level* *model* 27. In test `induce05` there are 12 *level* 1 actives each with a fixed non-overlapping field-of-view of 30 degrees, and a *level* 2 active. We begin with an induce threshold *slice size* of 1,000, except for an initial induce threshold *slice size* for *level* 2 of 30,000,
+Let us simulate the dynamic *modelling* of the *2-level* *model* 27. In test `induce05` there are 12 *level* 1 actives each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* 2 active. We begin with an induce threshold *slice size* of 1,000, except for an initial induce threshold *slice size* for *level* 2 of 30,000,
 ```
 /usr/bin/time -v ./main induce05 model046 data009 1000 30000 >model046.log 2>&1
 
@@ -816,7 +816,7 @@ b: 496376
 c: 1.73741e+06
 likelihood c-a-b: 207472
 ```
-We can see that each of the *level* 1 actives has around 150 *fuds*. The *level* 1 active has 139 *fuds*. The overall *likelihood* of *model* 46 is 207,472. This may be compared to a *likelihood* for *model* 27 of 231,911.
+We can see that each of the *level* 1 actives has around 150 *fuds*. The *level* 1 active has 139 *fuds*. The overall *likelihood* of *model* 46 is 207,472. This may be compared to a *likelihood* for *model* 27 of 231,911. *Model* 27 has 4096 *level 2 fuds*.
 
 In *model* 49, the *level* 1 actives have an initial threshold of 10,000 and thereafter 200, and the *level* 2 active has an initial threshold of 30,000 and thereafter 50,
 ```
@@ -891,9 +891,9 @@ b: 618212
 c: 2.33977e+06
 likelihood c-a-b: 224685
 ```
-The *likelihood* of 224,685 is closer to that of *model* 27. The trailing *model* 27 *slice size* is 62. This demonstrates that *multi-level* dynamic *modelling* is also not much less efficient than static.
+*Model* 49 has 3287 *fuds*. The *likelihood* of 224,685 is closer to that of *model* 27. The *model* 27 trailing *slice size* is 62. This demonstrates that *multi-level* dynamic *modelling* is also not much less efficient than static.
 
-Now let us see the effect of adding *frames*. First we will consider the *level* 1 static *model* 26 (*likelihood* 197,025) and dynamic *model* 43 (*likelihood* 190,568) again. Without any *frames*, test `induce07` reproduces *model* 43,
+Now let us see the effect of adding *frames*. First we will consider the *1-level* static *model* 26 (*likelihood* 197,025) and corresponding dynamic *model* 43 (*likelihood* 190,568) again. Without any *frames*, test `induce07` reproduces *model* 43,
 
 ```
 cd ~/TBOT02_ws
@@ -909,7 +909,7 @@ self03: 0
 likelihood c-a-b: 190568
 ...
 ```
-If we add one *frame* 12 *events* before the present, we see a small increase in *likelihood* to 191,362 -
+If we add one *frame* 12 *events* (or 3 seconds) before the present, we see a small increase in *likelihood* to 191,362 -
 ```
 ./main induce07 model052 data009 7000 0 12
 ...
@@ -981,7 +981,7 @@ frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
 0|32|||||196,969
 0|32||6|10|15|198,154
 
-We can see in the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the approach and then the turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general self *frames* appear to be more useful at longer times, whereas *underlying frames* appear to be more specific. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement.
+We can see in the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the turtlebot's approach, turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general, self *frames* appear to be most interesting at longer times, whereas *underlying frames* appear to be optimised at specific times. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement. *Underlying frames* work at particular dynamic geometries.
 
 Lastly, consider the effect of *frames* on the *2-level model* 49,
 ```
@@ -992,14 +992,35 @@ likelihood c-a-b: 225360
 
 /usr/bin/time -v ./main induce08 model057 data009 50 30000 12 1 200 10000 0 32 0 6 10 15 >model057.log 2>&1
 ...
-TODO
+likelihood c-a-b: 223097
+...
+
+/usr/bin/time -v ./main induce08 model058 data009 50 30000 12 1 200 10000 0 32 >model058.log 2>&1
+...
+likelihood c-a-b: 221891
+...
 ...
 ```
+Examination of the logs for *models* 56 and 57 show a lot of very low *alignment slices*. This suggests that the initial threshold is too high, reducing the *underlying variable* cardinality. Re-running with lower threshold alters the results -
+```
+/usr/bin/time -v ./main induce08 model059 data009 50 500 12 1 200 200 0 1 3 6 10 15 >model059.log 2>&1
+...
+likelihood c-a-b: 227,495
+...
+
+/usr/bin/time -v ./main induce08 model060 data009 50 500 12 1 200 200 0 32 0 6 10 15 >model060.log 2>&1
+...
+likelihood c-a-b: 212,350
+...
+```
+This shows the set of best cases,
 frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
 ---|---|---|---|---|---|---
 0||||||224,685
-0|1|3|6|10|15|225,360
-0|32||6|10|15|TODO
+0|1|3|6|10|15|227,495
+0|32||6|10|15|223,097
+0|32|||||221,891
 
 The *likelihood* of *model* 49 is 224,685. 
-In the case of *frames* 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is a small increase to a *likelihood* of 225,360. In the case of *frames* 0 (now), 32 (8s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), TODO.
+In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is a small increase to a *likelihood* of 227,495. That was the only case of an increase, but we can still conclude that there is some dynamic *alignment* in the *2-level* case too.
+
