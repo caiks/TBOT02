@@ -203,18 +203,6 @@ Now let us investigate various turtlebot *models* and controllers.
 
 [Dynamic modelling](#Dynamic)
 
-[Models of the scan substrate](#Models)
-
-[Models conditioned on location and position](#Models_conditioned)
-
-[Location and position observer](#Observer)
-
-[Modelling with an unbiased controller](#Unbiased)
-
-[Timewise frames](#Timewise)
-
-[Motor actions](#Motor)
-
 [Actor node](#Actor)
 
 <a name = "Dynamic"></a>
@@ -1023,4 +1011,17 @@ frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
 
 The *likelihood* of *model* 49 is 224,685. 
 In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is a small increase to a *likelihood* of 227,495. That was the only case of an increase, but we can still conclude that there is some dynamic *alignment* in the *2-level* case too.
+
+<a name = "Actor"></a>
+
+### Actor node
+
+The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. 
+
+TODO
+
+It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. 
+
+In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`.
+
 
