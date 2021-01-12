@@ -1024,4 +1024,18 @@ It is given a *model*, a goal room and a mode of deciding actions. At each poten
 
 In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`.
 
+```
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT01_ws/env009.model -s libgazebo_ros_init.so
+
+```
+
+```
+ros2 run TBOT01 controller data.bin 250 5000 5000 
+
+```
+```
+ros2 run TBOT01 actor model028_location room5 1000 data009 0 mode001
+
+```
+
 
