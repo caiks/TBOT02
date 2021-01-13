@@ -12,7 +12,7 @@
 class Actor : public rclcpp::Node
 {
 public:
-	Actor(const std::string&, const std::string&, std::chrono::milliseconds, const std::string&, std::size_t, const std::string&, std::size_t, double);
+	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::size_t, const std::string&);
 	~Actor();
 
 private:
@@ -28,17 +28,18 @@ private:
 	bool _pose_updated;
 	bool _scan_updated;
 	
+	std::string _struct;
+	std::string _model;
 	std::string _mode;
-	std::size_t _act_factor;
-	double _majority_fraction;
 	
 	std::string _room;
 
-	std::shared_ptr<Alignment::System> _uu;
-	std::shared_ptr<Alignment::SystemRepa> _ur;
-	std::shared_ptr<Alignment::ApplicationRepa> _dr;
-	std::map<std::size_t, std::shared_ptr<Alignment::HistoryRepa>> _slice_history;
 	std::map<std::string, Alignment::Histogram> _room_location_goal;
+	
+	std::shared_ptr<Alignment::ActiveSystem> _system;
+	std::size_t _level1Size;
+	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
+	std::size_t _activeSize;
 
 	void act_callback();
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
