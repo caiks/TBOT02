@@ -12,7 +12,7 @@
 class Actor : public rclcpp::Node
 {
 public:
-	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::size_t, const std::string&);
+	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::size_t, std::size_t, std::size_t, const std::string&);
 	~Actor();
 
 private:
@@ -40,6 +40,10 @@ private:
 	std::size_t _level1Size;
 	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
 	std::size_t _activeSize;
+	std::vector<std::shared_ptr<Alignment::Active>> _level1;
+	std::size_t _induceThresholdLevel1;
+	std::vector<std::shared_ptr<Alignment::Active>> _level2;
+	std::size_t _induceThreshold;
 
 	void act_callback();
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);

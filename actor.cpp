@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
 
-Actor::Actor(std::chrono::milliseconds act_interval, const std::string& room_initial, const std::string& structure, const std::string& model, std::size_t level1Size, std::size_t activeSize, const std::string& mode)
+Actor::Actor(std::chrono::milliseconds act_interval, const std::string& room_initial, const std::string& structure, const std::string& model, std::size_t level1Size, std::size_t activeSize, std::size_t induceThresholdLevel1, std::size_t induceThreshold, const std::string& mode)
 : Node("TBOT02_actor_node")
 {
 	typedef std::tuple<std::string, std::string, std::string> String3;	
@@ -27,6 +27,8 @@ Actor::Actor(std::chrono::milliseconds act_interval, const std::string& room_ini
 	_model = model;
 	_level1Size = level1Size;
 	_activeSize = activeSize;
+	_induceThresholdLevel1 = induceThresholdLevel1;
+	_induceThreshold = induceThreshold;
 	_mode = mode;
 	
 	EVAL(_room);
@@ -34,6 +36,8 @@ Actor::Actor(std::chrono::milliseconds act_interval, const std::string& room_ini
 	EVAL(_model);
 	EVAL(_level1Size);
 	EVAL(_activeSize);
+	EVAL(_induceThresholdLevel1);
+	EVAL(_induceThreshold);
 	EVAL(_mode);
 	
 	{
@@ -177,6 +181,134 @@ void Actor::act_callback()
 	{
 		_system = std::make_shared<ActiveSystem>();
 		_events = std::make_shared<ActiveEventsRepa>(_level1Size+1);
+		for (std::size_t m = 0; m < _level1Size; m++)
+			_level1.push_back(std::make_shared<Active>());
+		for (std::size_t m = 0; m < _level1Size; m++)
+		{			
+			auto& activeA = *_level1[m];
+			activeA.name = _model + "_1_" + (m<10 ? "0" : "") + std::to_string(m);
+			activeA.system = _system;
+			activeA.var = activeA.system->next(activeA.bits);
+			activeA.varSlice = activeA.system->next(activeA.bits);
+			activeA.historySize = _activeSize;
+			activeA.induceThreshold = _induceThresholdLevel1;
+			activeA.logging = false;
+			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+			activeA.underlyingEventsRepa.push_back(_events);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					auto vscan = std::make_shared<Variable>("scan");
+					int start = 360 - (360/_level1Size/2) + (360/_level1Size)*m;
+					int end = start + (360/_level1Size);
+					for (int i = start; i < end; i++)
+						vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					// memset(rr1, 0, z1*n1);			
+				}
+				activeA.underlyingHistoryRepa.push_back(hr1);
+			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+		}
+	
+		_level2.push_back(std::make_shared<Active>());
+		{
+			auto& activeA = *_level2.front();
+			activeA.name = _model + "_2";
+			activeA.system = _system;
+			activeA.var = activeA.system->next(activeA.bits);
+			activeA.varSlice = activeA.system->next(activeA.bits);
+			activeA.historySize = _activeSize;
+			activeA.induceThreshold = _induceThreshold;
+			activeA.logging = false;
+			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+			activeA.underlyingEventsRepa.push_back(_events);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					vv0.push_back(mm[Variable("motor")]);
+					vv0.push_back(mm[Variable("location")]);
+					for (auto v : vv0)
+						activeA.induceVarExclusions.insert(v);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					// memset(rr1, 0, z1*n1);			
+				}
+				activeA.underlyingHistoryRepa.push_back(hr1);
+			}
+			for (std::size_t m = 0; m < _level1Size; m++)
+			{
+				auto& activeB = *_level1[m];
+				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
+				activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
+			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
+		}
 	}
 		
 }
@@ -198,16 +330,20 @@ int main(int argc, char** argv)
 	std::string model;
 	std::size_t level1Size;
 	std::size_t activeSize;
+	std::size_t induceThresholdLevel1;
+	std::size_t induceThreshold;
 	if (structure == "struct001")
 	{
 		model = string(argc > arg ? argv[arg++] : "");	
 		level1Size = argc > arg ? std::atol(argv[arg++]) : 12;
 		activeSize = argc > arg ? std::atol(argv[arg++]) : 1000000;
+		induceThresholdLevel1 = argc > arg ? std::atol(argv[arg++]) : 100;
+		induceThreshold = argc > arg ? std::atol(argv[arg++]) : 100;
 	}
 	string mode = string(argc >= arg ? argv[arg++] : "mode001");
 
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<Actor>(act_interval, room_initial, structure, model, level1Size, activeSize, mode));
+	rclcpp::spin(std::make_shared<Actor>(act_interval, room_initial, structure, model, level1Size, activeSize, induceThresholdLevel1, induceThreshold, mode));
 	rclcpp::shutdown();
 
 	return 0;
