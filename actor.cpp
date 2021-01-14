@@ -11,6 +11,14 @@ using namespace std::chrono_literals;
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
 
+Actor* actor_this;
+
+void actor_log(const std::string& str)
+{
+	RCLCPP_INFO(actor_this->get_logger(), str);
+	return;
+};
+
 Actor::Actor(std::chrono::milliseconds actInterval, const std::string& room_initial, const std::string& structure, const std::string& model, std::size_t induceThreadCount, std::chrono::milliseconds induceInterval, std::size_t level1Count, std::size_t activeSizeLevel1, std::size_t induceThresholdLevel1, std::size_t induceThresholdInitialLevel1, std::size_t activeSize, std::size_t induceThreshold, std::size_t induceThresholdInitial, const std::string& mode)
 : Node("TBOT02_actor_node")
 {
@@ -36,6 +44,8 @@ Actor::Actor(std::chrono::milliseconds actInterval, const std::string& room_init
 	_induceThresholdInitial = induceThresholdInitial;
 	_mode = mode;
 	
+	_eventId = 0;
+	
 	EVAL(_room);
 	EVAL(_struct);
 	EVAL(_model);
@@ -51,19 +61,21 @@ Actor::Actor(std::chrono::milliseconds actInterval, const std::string& room_init
 			hr = std::move(std::get<2>(xx));
 		}
 		_system = std::make_shared<ActiveSystem>();
+		actor_this = this;
 		_events = std::make_shared<ActiveEventsRepa>(_level1Count+1);
 		for (std::size_t m = 0; m < _level1Count; m++)
 			_level1.push_back(std::make_shared<Active>());
 		for (std::size_t m = 0; m < _level1Count; m++)
 		{			
 			auto& activeA = *_level1[m];
+			activeA.log = actor_log;
 			activeA.name = _model + "_1_" + (m<10 ? "0" : "") + std::to_string(m);
 			activeA.system = _system;
 			activeA.var = activeA.system->next(activeA.bits);
 			activeA.varSlice = activeA.system->next(activeA.bits);
 			activeA.historySize = _activeSizeLevel1;
 			activeA.induceThreshold = _induceThresholdLevel1;
-			activeA.logging = false;
+			activeA.logging = true;
 			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeA.underlyingEventsRepa.push_back(_events);
 			{
@@ -117,13 +129,14 @@ Actor::Actor(std::chrono::milliseconds actInterval, const std::string& room_init
 		_level2.push_back(std::make_shared<Active>());
 		{
 			auto& activeA = *_level2.front();
+			activeA.log = actor_log;
 			activeA.name = _model + "_2";
 			activeA.system = _system;
 			activeA.var = activeA.system->next(activeA.bits);
 			activeA.varSlice = activeA.system->next(activeA.bits);
 			activeA.historySize = _activeSize;
 			activeA.induceThreshold = _induceThreshold;
-			activeA.logging = false;
+			activeA.logging = true;
 			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
 			activeA.underlyingEventsRepa.push_back(_events);
 			{
@@ -328,8 +341,28 @@ void Actor::act_callback()
 		ur = std::move(std::get<1>(xx));
 		hr = std::move(std::get<2>(xx));
 	}
-
-		
+	_eventId++;
+	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
+	auto do_update = [](Active& active, ActiveUpdateParameters ppu)
+	{
+		active.update(ppu);
+		return;
+	};
+	{		
+		std::vector<std::thread> threadsLevel1;
+		threadsLevel1.reserve(_level1Count);
+		for (std::size_t m = 0; m < _level1Count; m++)
+		{
+			auto& activeA = *_level1[m];
+			threadsLevel1.push_back(std::thread(do_update, std::ref(activeA), _updateParameters));
+		}
+		for (auto& t : threadsLevel1)
+			t.join();			
+	}
+	{
+		auto& activeA = *_level2.front();	
+		activeA.update(_updateParameters);
+	}
 }
 
 void Actor::goal_callback(const std_msgs::msg::String::SharedPtr msg)
@@ -369,7 +402,7 @@ int main(int argc, char** argv)
 		induceThreshold = argc > arg ? std::atol(argv[arg++]) : 100;
 		induceThresholdInitial = argc > arg ? std::atol(argv[arg++]) : 1000;
 	}
-	string mode = string(argc >= arg ? argv[arg++] : "mode001");
+	string mode = string(argc > arg ? argv[arg++] : "mode001");
 
 	rclcpp::init(argc, argv);
 	rclcpp::spin(std::make_shared<Actor>(actInterval, room_initial, structure, model, induceThreadCount, induceInterval, level1Count, activeSizeLevel1, induceThresholdLevel1, induceThresholdInitialLevel1, activeSize, induceThreshold, induceThresholdInitial, mode));

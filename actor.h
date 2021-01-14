@@ -52,6 +52,7 @@ private:
 	Alignment::ActiveUpdateParameters _updateParameters;
 	Alignment::ActiveInduceParameters _induceParametersLevel1;
 	Alignment::ActiveInduceParameters _induceParameters;
+	std::size_t _eventId;
 
 	void act_callback();
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
