@@ -12,7 +12,7 @@
 class Actor : public rclcpp::Node
 {
 public:
-	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::size_t, std::size_t, std::size_t, const std::string&);
+	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::chrono::milliseconds, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, const std::string&);
 	~Actor();
 
 private:
@@ -30,6 +30,8 @@ private:
 	
 	std::string _struct;
 	std::string _model;
+	std::size_t _induceThreadCount;
+	std::chrono::milliseconds _induceInterval;
 	std::string _mode;
 	
 	std::string _room;
@@ -37,13 +39,19 @@ private:
 	std::map<std::string, Alignment::Histogram> _room_location_goal;
 	
 	std::shared_ptr<Alignment::ActiveSystem> _system;
-	std::size_t _level1Size;
 	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
-	std::size_t _activeSize;
 	std::vector<std::shared_ptr<Alignment::Active>> _level1;
+	std::size_t _level1Count;
+	std::size_t _activeSizeLevel1;
 	std::size_t _induceThresholdLevel1;
+	std::size_t _induceThresholdInitialLevel1;
 	std::vector<std::shared_ptr<Alignment::Active>> _level2;
+	std::size_t _activeSize;
 	std::size_t _induceThreshold;
+	std::size_t _induceThresholdInitial;
+	Alignment::ActiveUpdateParameters _updateParameters;
+	Alignment::ActiveInduceParameters _induceParametersLevel1;
+	Alignment::ActiveInduceParameters _induceParameters;
 
 	void act_callback();
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
