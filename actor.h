@@ -12,7 +12,7 @@
 class Actor : public rclcpp::Node
 {
 public:
-	Actor(std::chrono::milliseconds, const std::string&, const std::string&, const std::string&, std::size_t, std::chrono::milliseconds, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, std::size_t, const std::string&);
+	Actor(const std::string&);
 	~Actor();
 
 private:
