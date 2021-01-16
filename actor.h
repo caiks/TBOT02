@@ -42,12 +42,8 @@ private:
 	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
 	std::vector<std::shared_ptr<Alignment::Active>> _level1;
 	std::size_t _level1Count;
-	std::size_t _activeSizeLevel1;
-	std::size_t _induceThresholdLevel1;
 	std::size_t _induceThresholdInitialLevel1;
 	std::vector<std::shared_ptr<Alignment::Active>> _level2;
-	std::size_t _activeSize;
-	std::size_t _induceThreshold;
 	std::size_t _induceThresholdInitial;
 	Alignment::ActiveUpdateParameters _updateParameters;
 	Alignment::ActiveInduceParameters _induceParametersLevel1;
