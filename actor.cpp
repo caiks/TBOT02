@@ -27,6 +27,17 @@ void actor_log(const std::string& str)
 	return;
 };
 
+void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceInterval, std::size_t induceThresholdInitial)
+{
+	while (!active.terminate)
+	{
+		if (actor._eventId >= induceThresholdInitial)
+			active.induce(actor._induceParametersLevel1);
+		std::this_thread::sleep_for(std::chrono::milliseconds(induceInterval));
+	}	
+	return;
+};
+
 Actor::Actor(const std::string& args_filename)
 : Node("TBOT02_actor_node")
 {
@@ -65,16 +76,42 @@ Actor::Actor(const std::string& args_filename)
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
 	_induceThreadCount = ARGS_INT_DEF(induceThreadCount,4);
-	_induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));
+
 	_level1Count = ARGS_INT_DEF(level1Count,12);
 	std::size_t activeSizeLevel1 = ARGS_INT_DEF(activeSizeLevel1,10000);
 	std::size_t induceThresholdLevel1 = ARGS_INT_DEF(induceThresholdLevel1,100);
-	_induceThresholdInitialLevel1 = ARGS_INT_DEF(induceThresholdInitialLevel1,500);
+	std::size_t induceThresholdInitialLevel1 = ARGS_INT_DEF(induceThresholdInitialLevel1,500);
+	std::chrono::milliseconds induceIntervalLevel1 = (std::chrono::milliseconds)(ARGS_INT_DEF(induceIntervalLevel1,10));
 	std::size_t activeSize = ARGS_INT_DEF(activeSize,1000000);
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
-	_induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
-	_mode = ARGS_STRING_DEF(mode,"mode001");
+	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
+	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	_mode = ARGS_STRING_DEF(mode,"mode001");
 		
+	_induceParametersLevel1.tint = _induceThreadCount;
+	_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
+	_induceParametersLevel1.lmax = ARGS_INT_DEF(induceParametersLevel1.lmax,8);
+	_induceParametersLevel1.xmax = ARGS_INT_DEF(induceParametersLevel1.xmax,128);
+	_induceParametersLevel1.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
+	_induceParametersLevel1.omax = ARGS_INT_DEF(induceParametersLevel1.omax,10);
+	_induceParametersLevel1.bmax = ARGS_INT_DEF(induceParametersLevel1.bmax,10*3);
+	_induceParametersLevel1.mmax = ARGS_INT_DEF(induceParametersLevel1.mmax,3);
+	_induceParametersLevel1.umax = ARGS_INT_DEF(induceParametersLevel1.umax,128);
+	_induceParametersLevel1.pmax = ARGS_INT_DEF(induceParametersLevel1.pmax,1);
+	_induceParametersLevel1.mult = ARGS_INT_DEF(induceParametersLevel1.mult,1);
+	_induceParametersLevel1.seed = ARGS_INT_DEF(induceParametersLevel1.seed,5);
+	_induceParameters.tint = _induceThreadCount;		
+	_induceParameters.wmax = ARGS_INT_DEF(induceParameters.wmax,18);
+	_induceParameters.lmax = ARGS_INT_DEF(induceParameters.lmax,8);
+	_induceParameters.xmax = ARGS_INT_DEF(induceParameters.xmax,128);
+	_induceParameters.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
+	_induceParameters.omax = ARGS_INT_DEF(induceParameters.omax,10);
+	_induceParameters.bmax = ARGS_INT_DEF(induceParameters.bmax,10*3);
+	_induceParameters.mmax = ARGS_INT_DEF(induceParameters.mmax,3);
+	_induceParameters.umax = ARGS_INT_DEF(induceParameters.umax,128);
+	_induceParameters.pmax = ARGS_INT_DEF(induceParameters.pmax,1);
+	_induceParameters.mult = ARGS_INT_DEF(induceParameters.mult,1);
+	_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);
+
 	EVAL(_room);
 	EVAL(_struct);
 	EVAL(_model);
@@ -91,6 +128,7 @@ Actor::Actor(const std::string& args_filename)
 		}
 		_system = std::make_shared<ActiveSystem>();
 		actor_this = this;
+		_threads.reserve(_level1Count+1);
 		_events = std::make_shared<ActiveEventsRepa>(_level1Count+1);
 		for (std::size_t m = 0; m < _level1Count; m++)
 			_level1.push_back(std::make_shared<Active>());
@@ -153,6 +191,7 @@ Actor::Actor(const std::string& args_filename)
 				activeA.historySparse = std::move(hr);			
 			}
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
 		}
 	
 		_level2.push_back(std::make_shared<Active>());
@@ -220,36 +259,12 @@ Actor::Actor(const std::string& args_filename)
 				}		
 				activeA.historySparse = std::move(hr);			
 			}
-			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);			
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);		
+			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
 		}
 	}
 	
-	{
-		_induceParametersLevel1.tint = _induceThreadCount;
-		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
-		_induceParametersLevel1.lmax = ARGS_INT_DEF(induceParametersLevel1.lmax,8);
-		_induceParametersLevel1.xmax = ARGS_INT_DEF(induceParametersLevel1.xmax,128);
-		_induceParametersLevel1.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
-		_induceParametersLevel1.omax = ARGS_INT_DEF(induceParametersLevel1.omax,10);
-		_induceParametersLevel1.bmax = ARGS_INT_DEF(induceParametersLevel1.bmax,10*3);
-		_induceParametersLevel1.mmax = ARGS_INT_DEF(induceParametersLevel1.mmax,3);
-		_induceParametersLevel1.umax = ARGS_INT_DEF(induceParametersLevel1.umax,128);
-		_induceParametersLevel1.pmax = ARGS_INT_DEF(induceParametersLevel1.pmax,1);
-		_induceParametersLevel1.mult = ARGS_INT_DEF(induceParametersLevel1.mult,1);
-		_induceParametersLevel1.seed = ARGS_INT_DEF(induceParametersLevel1.seed,5);
-		_induceParameters.tint = _induceThreadCount;		
-		_induceParameters.wmax = ARGS_INT_DEF(induceParameters.wmax,18);
-		_induceParameters.lmax = ARGS_INT_DEF(induceParameters.lmax,8);
-		_induceParameters.xmax = ARGS_INT_DEF(induceParameters.xmax,128);
-		_induceParameters.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
-		_induceParameters.omax = ARGS_INT_DEF(induceParameters.omax,10);
-		_induceParameters.bmax = ARGS_INT_DEF(induceParameters.bmax,10*3);
-		_induceParameters.mmax = ARGS_INT_DEF(induceParameters.mmax,3);
-		_induceParameters.umax = ARGS_INT_DEF(induceParameters.umax,128);
-		_induceParameters.pmax = ARGS_INT_DEF(induceParameters.pmax,1);
-		_induceParameters.mult = ARGS_INT_DEF(induceParameters.mult,1);
-		_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);
-	}
+
 	
 	{
 		Variable location("location");

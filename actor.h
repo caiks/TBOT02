@@ -15,15 +15,6 @@ public:
 	Actor(const std::string&);
 	~Actor();
 
-private:
-	rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _turn_request_pub;
-
-	rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr _scan_sub;
-	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr _odom_sub;
-	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _goal_sub;
-
-	rclcpp::TimerBase::SharedPtr _act_timer;
-
 	TBOT02::Record _record;
 	bool _pose_updated;
 	bool _scan_updated;
@@ -40,15 +31,23 @@ private:
 	
 	std::shared_ptr<Alignment::ActiveSystem> _system;
 	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
+	std::vector<std::thread> _threads;
 	std::vector<std::shared_ptr<Alignment::Active>> _level1;
 	std::size_t _level1Count;
-	std::size_t _induceThresholdInitialLevel1;
 	std::vector<std::shared_ptr<Alignment::Active>> _level2;
-	std::size_t _induceThresholdInitial;
 	Alignment::ActiveUpdateParameters _updateParameters;
 	Alignment::ActiveInduceParameters _induceParametersLevel1;
 	Alignment::ActiveInduceParameters _induceParameters;
 	std::size_t _eventId;
+	
+private:
+	rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _turn_request_pub;
+
+	rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr _scan_sub;
+	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr _odom_sub;
+	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _goal_sub;
+
+	rclcpp::TimerBase::SharedPtr _act_timer;
 
 	void act_callback();
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
