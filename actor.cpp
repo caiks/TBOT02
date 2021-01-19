@@ -11,10 +11,14 @@ namespace js = rapidjson;
 
 #define EVAL(x) { std::ostringstream str; str << #x << ": " << (x); RCLCPP_INFO(this->get_logger(), str.str());}
 
-#define ARGS_STRING(x) args.HasMember(#x) && args[#x].IsString() ? args[#x].GetString() : ""
 #define ARGS_STRING_DEF(x,y) args.HasMember(#x) && args[#x].IsString() ? args[#x].GetString() : y
-#define ARGS_INT(x) args.HasMember(#x) && args[#x].IsInt() ? args[#x].GetInt() : 0
+#define ARGS_STRING(x) ARGS_STRING_DEF(x,"")
 #define ARGS_INT_DEF(x,y) args.HasMember(#x) && args[#x].IsInt() ? args[#x].GetInt() : y
+#define ARGS_INT(x) ARGS_INT_DEF(x,0)
+#define ARGS_DOUBLE_DEF(x,y) args.HasMember(#x) && args[#x].IsDouble() ? args[#x].GetDouble() : y
+#define ARGS_DOUBLE(x) ARGS_DOUBLE_DEF(x,0.0)
+#define ARGS_BOOL_DEF(x,y) args.HasMember(#x) && args[#x].IsBool() ? args[#x].GetBool() : y
+#define ARGS_BOOL(x) ARGS_BOOL_DEF(x,false)
 
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
@@ -31,7 +35,7 @@ void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceIn
 {
 	while (!active.terminate)
 	{
-		if (actor._eventId >= induceThresholdInitial)
+		if (actor._pose_updated && actor._scan_updated && actor._eventId >= induceThresholdInitial)
 			active.induce(actor._induceParametersLevel1);
 		std::this_thread::sleep_for(std::chrono::milliseconds(induceInterval));
 	}	
@@ -46,6 +50,7 @@ Actor::Actor(const std::string& args_filename)
 	auto add = pairHistogramsAdd_u;
 	auto single = histogramSingleton_u;			
 		
+	bool ok = true;
 	_pose_updated = false;
 	_scan_updated = false;
 	_eventId = 0;
@@ -75,17 +80,21 @@ Actor::Actor(const std::string& args_filename)
 	_room = ARGS_STRING_DEF(room_initial,"room1");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
+	std::string modelInitial = ARGS_STRING(model_initial);
 	_induceThreadCount = ARGS_INT_DEF(induceThreadCount,4);
 
 	_level1Count = ARGS_INT_DEF(level1Count,12);
+	bool level1Logging = ARGS_BOOL(logging_level1);
 	std::size_t activeSizeLevel1 = ARGS_INT_DEF(activeSizeLevel1,10000);
 	std::size_t induceThresholdLevel1 = ARGS_INT_DEF(induceThresholdLevel1,100);
 	std::size_t induceThresholdInitialLevel1 = ARGS_INT_DEF(induceThresholdInitialLevel1,500);
 	std::chrono::milliseconds induceIntervalLevel1 = (std::chrono::milliseconds)(ARGS_INT_DEF(induceIntervalLevel1,10));
+	bool level2Logging = ARGS_BOOL(logging_level2);
 	std::size_t activeSize = ARGS_INT_DEF(activeSize,1000000);
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
-	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	_mode = ARGS_STRING_DEF(mode,"mode001");
+	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
+	_mode = ARGS_STRING_DEF(mode,"mode001");
 		
 	_induceParametersLevel1.tint = _induceThreadCount;
 	_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -136,60 +145,82 @@ Actor::Actor(const std::string& args_filename)
 		{			
 			auto& activeA = *_level1[m];
 			activeA.log = actor_log;
-			activeA.name = (_model!="" ? _model : "model") + "_1_" + (m<10 ? "0" : "") + std::to_string(m);
 			activeA.system = _system;
-			activeA.var = activeA.system->next(activeA.bits);
-			activeA.varSlice = activeA.system->next(activeA.bits);
-			activeA.historySize = activeSizeLevel1;
-			activeA.induceThreshold = induceThresholdLevel1;
-			activeA.logging = true;
-			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
-			activeA.underlyingEventsRepa.push_back(_events);
+			if (modelInitial.size())
 			{
-				SizeList vv0;
+				ActiveIOParameters ppio;
+				ppio.filename = modelInitial + "_1_" + (m<10 ? "0" : "") + std::to_string(m) +".ac";
+				activeA.logging = true;
+				if (!activeA.load(ppio))
 				{
-					auto& mm = ur->mapVarSize();
-					auto vscan = std::make_shared<Variable>("scan");
-					int start = 360 - (360/_level1Count/2) + (360/_level1Count)*m;
-					int end = start + (360/_level1Count);
-					for (int i = start; i < end; i++)
-						vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
-				}
-				auto hr1 = std::make_shared<HistoryRepa>();
+					RCLCPP_INFO(this->get_logger(), "TBOT02 actor node failed to load model");					
+					_system.reset();
+					return;
+				}								
+				_system->block = std::max(_system->block, activeA.varMax() >> activeA.bits);
+				if (activeA.underlyingEventUpdateds.size())
+					_eventId = std::max(_eventId,*(activeA.underlyingEventUpdateds.rbegin()));					
+				else if (activeA.historyOverflow)
+					_eventId = std::max(_eventId,activeA.historySize);	
+				else					
+					_eventId = std::max(_eventId,activeA.historyEvent);	
+			}
+			else
+			{
+				activeA.var = activeA.system->next(activeA.bits);
+				activeA.varSlice = activeA.system->next(activeA.bits);
+				activeA.historySize = activeSizeLevel1;
+				activeA.induceThreshold = induceThresholdLevel1;
+				activeA.decomp = std::make_unique<DecompFudSlicedRepa>();				
 				{
-					auto sh = hr->shape;
-					auto& mvv = hr->mapVarInt();
-					auto n1 = vv0.size();
-					hr1->dimension = n1;
-					hr1->vectorVar = new std::size_t[n1];
-					auto vv1 = hr1->vectorVar;
-					hr1->shape = new std::size_t[n1];
-					auto sh1 = hr1->shape;
-					for (std::size_t i = 0; i < n1; i++)
+					SizeList vv0;
 					{
-						auto v = vv0[i];
-						vv1[i] = v;
-						sh1[i] = sh[mvv[v]];
+						auto& mm = ur->mapVarSize();
+						auto vscan = std::make_shared<Variable>("scan");
+						int start = 360 - (360/_level1Count/2) + (360/_level1Count)*m;
+						int end = start + (360/_level1Count);
+						for (int i = start; i < end; i++)
+							vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
 					}
-					hr1->evient = true;
-					hr1->size = activeA.historySize;
-					auto z1 = hr1->size;
-					hr1->arr = new unsigned char[z1*n1];
-					auto rr1 = hr1->arr;
-					// memset(rr1, 0, z1*n1);			
+					auto hr1 = std::make_shared<HistoryRepa>();
+					{
+						auto sh = hr->shape;
+						auto& mvv = hr->mapVarInt();
+						auto n1 = vv0.size();
+						hr1->dimension = n1;
+						hr1->vectorVar = new std::size_t[n1];
+						auto vv1 = hr1->vectorVar;
+						hr1->shape = new std::size_t[n1];
+						auto sh1 = hr1->shape;
+						for (std::size_t i = 0; i < n1; i++)
+						{
+							auto v = vv0[i];
+							vv1[i] = v;
+							sh1[i] = sh[mvv[v]];
+						}
+						hr1->evient = true;
+						hr1->size = activeA.historySize;
+						auto z1 = hr1->size;
+						hr1->arr = new unsigned char[z1*n1];
+						auto rr1 = hr1->arr;
+						// memset(rr1, 0, z1*n1);			
+					}
+					activeA.underlyingHistoryRepa.push_back(hr1);
 				}
-				activeA.underlyingHistoryRepa.push_back(hr1);
-			}
-			{
-				auto hr = std::make_unique<HistorySparseArray>();
 				{
-					auto z = activeA.historySize;
-					hr->size = z;
-					hr->capacity = 1;
-					hr->arr = new std::size_t[z];		
-				}		
-				activeA.historySparse = std::move(hr);			
+					auto hr = std::make_unique<HistorySparseArray>();
+					{
+						auto z = activeA.historySize;
+						hr->size = z;
+						hr->capacity = 1;
+						hr->arr = new std::size_t[z];		
+					}		
+					activeA.historySparse = std::move(hr);			
+				}
 			}
+			activeA.name = (_model!="" ? _model : "model") + "_1_" + (m<10 ? "0" : "") + std::to_string(m);			
+			activeA.logging = level1Logging;
+			activeA.underlyingEventsRepa.push_back(_events);
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
 		}
@@ -198,73 +229,97 @@ Actor::Actor(const std::string& args_filename)
 		{
 			auto& activeA = *_level2.front();
 			activeA.log = actor_log;
-			activeA.name = (_model!="" ? _model : "model") + "_2";
 			activeA.system = _system;
-			activeA.var = activeA.system->next(activeA.bits);
-			activeA.varSlice = activeA.system->next(activeA.bits);
-			activeA.historySize = activeSize;
-			activeA.induceThreshold = induceThreshold;
-			activeA.logging = true;
-			activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
-			activeA.underlyingEventsRepa.push_back(_events);
+			if (modelInitial.size())
 			{
-				SizeList vv0;
+				ActiveIOParameters ppio;
+				ppio.filename = modelInitial + "_2" +".ac";
+				activeA.logging = true;
+				if (!activeA.load(ppio))
 				{
-					auto& mm = ur->mapVarSize();
-					vv0.push_back(mm[Variable("motor")]);
-					vv0.push_back(mm[Variable("location")]);
-					for (auto v : vv0)
-						activeA.induceVarExclusions.insert(v);
-				}
-				auto hr1 = std::make_shared<HistoryRepa>();
-				{
-					auto n = hr->dimension;
-					auto vv = hr->vectorVar;
-					auto sh = hr->shape;
-					auto& mvv = hr->mapVarInt();
-					auto n1 = vv0.size();
-					hr1->dimension = n1;
-					hr1->vectorVar = new std::size_t[n1];
-					auto vv1 = hr1->vectorVar;
-					hr1->shape = new std::size_t[n1];
-					auto sh1 = hr1->shape;
-					for (std::size_t i = 0; i < n1; i++)
-					{
-						auto v = vv0[i];
-						vv1[i] = v;
-						sh1[i] = sh[mvv[v]];
-					}
-					hr1->evient = true;
-					hr1->size = activeA.historySize;
-					auto z1 = hr1->size;
-					hr1->arr = new unsigned char[z1*n1];
-					auto rr1 = hr1->arr;
-					// memset(rr1, 0, z1*n1);			
-				}
-				activeA.underlyingHistoryRepa.push_back(hr1);
+					RCLCPP_INFO(this->get_logger(), "TBOT02 actor node failed to load model");					
+					_system.reset();
+					return;
+				}								
+				_system->block = std::max(_system->block, activeA.varMax() >> activeA.bits);
+				if (activeA.underlyingEventUpdateds.size())
+					_eventId = std::max(_eventId,*(activeA.underlyingEventUpdateds.rbegin()));					
+				else if (activeA.historyOverflow)
+					_eventId = std::max(_eventId,activeA.historySize);	
+				else					
+					_eventId = std::max(_eventId,activeA.historyEvent);	
 			}
+			else
+			{			
+				activeA.var = activeA.system->next(activeA.bits);
+				activeA.varSlice = activeA.system->next(activeA.bits);
+				activeA.historySize = activeSize;
+				activeA.induceThreshold = induceThreshold;
+				activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+				{
+					SizeList vv0;
+					{
+						auto& mm = ur->mapVarSize();
+						vv0.push_back(mm[Variable("motor")]);
+						vv0.push_back(mm[Variable("location")]);
+						for (auto v : vv0)
+							activeA.induceVarExclusions.insert(v);
+					}
+					auto hr1 = std::make_shared<HistoryRepa>();
+					{
+						auto n = hr->dimension;
+						auto vv = hr->vectorVar;
+						auto sh = hr->shape;
+						auto& mvv = hr->mapVarInt();
+						auto n1 = vv0.size();
+						hr1->dimension = n1;
+						hr1->vectorVar = new std::size_t[n1];
+						auto vv1 = hr1->vectorVar;
+						hr1->shape = new std::size_t[n1];
+						auto sh1 = hr1->shape;
+						for (std::size_t i = 0; i < n1; i++)
+						{
+							auto v = vv0[i];
+							vv1[i] = v;
+							sh1[i] = sh[mvv[v]];
+						}
+						hr1->evient = true;
+						hr1->size = activeA.historySize;
+						auto z1 = hr1->size;
+						hr1->arr = new unsigned char[z1*n1];
+						auto rr1 = hr1->arr;
+						// memset(rr1, 0, z1*n1);			
+					}
+					activeA.underlyingHistoryRepa.push_back(hr1);
+				}
+				for (std::size_t m = 0; m < _level1Count; m++)
+				{
+					auto& activeB = *_level1[m];
+					activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
+				}
+				{
+					auto hr = std::make_unique<HistorySparseArray>();
+					{
+						auto z = activeA.historySize;
+						hr->size = z;
+						hr->capacity = 1;
+						hr->arr = new std::size_t[z];		
+					}		
+					activeA.historySparse = std::move(hr);			
+				}
+			}
+			activeA.name = (_model!="" ? _model : "model") + "_2";
+			activeA.logging = level2Logging;
+			activeA.underlyingEventsRepa.push_back(_events);
 			for (std::size_t m = 0; m < _level1Count; m++)
 			{
 				auto& activeB = *_level1[m];
 				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
-				activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
-			}
-			{
-				auto hr = std::make_unique<HistorySparseArray>();
-				{
-					auto z = activeA.historySize;
-					hr->size = z;
-					hr->capacity = 1;
-					hr->arr = new std::size_t[z];		
-				}		
-				activeA.historySparse = std::move(hr);			
 			}
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);		
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
 		}
 	}
-	
-
 	
 	{
 		Variable location("location");
@@ -423,7 +478,7 @@ void Actor::act_callback()
 	}
 	_eventId++;
 	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
-	auto do_update = [](Active& active, ActiveUpdateParameters ppu)
+	auto run_update = [](Active& active, ActiveUpdateParameters ppu)
 	{
 		active.update(ppu);
 		return;
@@ -434,7 +489,7 @@ void Actor::act_callback()
 		for (std::size_t m = 0; m < _level1Count; m++)
 		{
 			auto& activeA = *_level1[m];
-			threadsLevel1.push_back(std::thread(do_update, std::ref(activeA), _updateParameters));
+			threadsLevel1.push_back(std::thread(run_update, std::ref(activeA), _updateParameters));
 		}
 		for (auto& t : threadsLevel1)
 			t.join();			
