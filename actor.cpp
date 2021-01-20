@@ -23,14 +23,19 @@ namespace js = rapidjson;
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
 
-Actor* actor_this;
+Actor* actor_this = 0;
 
 void actor_log(const std::string& str)
 {
-	RCLCPP_INFO(actor_this->get_logger(), str);
+	if (actor_this)
+	{
+		RCLCPP_INFO(actor_this->get_logger(), str);
+	}
+	else
+		std::cout << str << std::endl;
 	return;
 };
-
+		
 void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceInterval, std::size_t induceThresholdInitial)
 {
 	while (!active.terminate)
@@ -128,11 +133,11 @@ Actor::Actor(const std::string& args_filename)
 	
 	if (_struct=="struct001")
 	{
-		std::unique_ptr<SystemRepa> ur;
 		std::unique_ptr<HistoryRepa> hr;
 		{
 			SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ Record() });	
-			ur = std::move(std::get<1>(xx));
+			_uu = std::move(std::get<0>(xx));
+			_ur = std::move(std::get<1>(xx));
 			hr = std::move(std::get<2>(xx));
 		}
 		_system = std::make_shared<ActiveSystem>();
@@ -175,7 +180,7 @@ Actor::Actor(const std::string& args_filename)
 				{
 					SizeList vv0;
 					{
-						auto& mm = ur->mapVarSize();
+						auto& mm = _ur->mapVarSize();
 						auto vscan = std::make_shared<Variable>("scan");
 						int start = 360 - (360/_level1Count/2) + (360/_level1Count)*m;
 						int end = start + (360/_level1Count);
@@ -259,7 +264,7 @@ Actor::Actor(const std::string& args_filename)
 				{
 					SizeList vv0;
 					{
-						auto& mm = ur->mapVarSize();
+						auto& mm = _ur->mapVarSize();
 						vv0.push_back(mm[Variable("motor")]);
 						vv0.push_back(mm[Variable("location")]);
 						for (auto v : vv0)
@@ -465,22 +470,17 @@ void Actor::act_callback()
 	if (!_pose_updated || !_scan_updated || !_system)
 		return;
 
-	Variable motor("motor");
-	Variable location("location");
-	Variable room_next("room_next");
-	
-	std::unique_ptr<SystemRepa> ur;
 	std::unique_ptr<HistoryRepa> hr;
 	{
 		SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ _record });	
-		ur = std::move(std::get<1>(xx));
 		hr = std::move(std::get<2>(xx));
 	}
 	_eventId++;
 	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
 	auto run_update = [](Active& active, ActiveUpdateParameters ppu)
 	{
-		active.update(ppu);
+		if (!active.terminate)
+			active.update(ppu);
 		return;
 	};
 	{		
@@ -496,7 +496,55 @@ void Actor::act_callback()
 	}
 	{
 		auto& activeA = *_level2.front();	
-		activeA.update(_updateParameters);
+		if (!activeA.terminate)		
+			activeA.update(_updateParameters);
+	}
+	if (_struct=="struct001" && _mode=="mode001")
+	{		
+		auto single = histogramSingleton_u;		
+		auto mul = pairHistogramsMultiply;
+		auto sub = pairHistogramsSubtract_u;
+		auto size = [](const Histogram& aa)
+		{
+			return (double)histogramsSize(aa).getNumerator();
+		};		
+		auto trim = histogramsTrim;
+		auto ared = [](const Histogram& aa, const VarUSet& vv)
+		{
+			return setVarsHistogramsReduce(vv, aa);
+		};		
+		auto hraa = [](const System& uu, const SystemRepa& ur, const HistoryRepa& hr)
+		{
+			return historiesHistogram(*systemsHistoryRepasHistory_u(uu,ur,hr));
+		};
+		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
+		Variable motor("motor");
+		Variable location("location");
+		Variable room_next("room_next");
+		bool ok = true;
+		
+		auto& activeA = *_level2.front();
+		if (!activeA.terminate)	
+		{			
+			std::lock_guard<std::mutex> guard(activeA.mutex);
+			ok = ok && (activeA.historyOverflow	|| activeA.historyEvent);
+			std::size_t historyEventA = ok ? (activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historyOverflow - 1) : 0;
+			std::size_t sliceA = ok ? activeA.historySparse->arr[historyEventA] : 0;
+			SizeSet setEventA = ok ? activeA.historySlicesSetEvent[sliceA] : SizeSet();
+			std::shared_ptr<HistoryRepa> hr = ok ? activeA.underlyingHistoryRepa.front() : 0;
+			Histogram histogramA;
+			if (ok)
+			{
+				SizeList ev(setEventA.begin(),setEventA.end());
+				histogramA = *trim(*hraa(*_uu, *_ur, *hrsel(ev.size(), ev.data(), *hr)));
+			}
+			// EVAL(size(histogramA))
+			// EVAL(histogramA);
+			EVAL(*ared(histogramA, VarUSet{location}));
+			EVAL(*ared(histogramA, VarUSet{motor}));
+			// EVAL(_room);
+			// EVAL(_room_location_goal[_room]);	
+		}		
 	}
 }
 

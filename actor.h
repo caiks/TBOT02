@@ -40,6 +40,9 @@ public:
 	Alignment::ActiveInduceParameters _induceParameters;
 	std::size_t _eventId;
 	
+	std::shared_ptr<Alignment::System> _uu;
+	std::shared_ptr<Alignment::SystemRepa> _ur;
+	
 private:
 	rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _turn_request_pub;
 
