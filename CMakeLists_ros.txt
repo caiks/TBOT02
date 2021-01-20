@@ -28,10 +28,6 @@ link_libraries(libAlignmentActive.a libAlignmentRepaC.a libAlignmentC.a)
 
 set(dependencies "geometry_msgs" "nav_msgs" "rclcpp" "sensor_msgs" "tf2")
 
-add_executable(controller controller.cpp dev.cpp)
-ament_target_dependencies(controller ${dependencies} Threads)
-install(TARGETS controller DESTINATION lib/${PROJECT_NAME})
-
 add_executable(actor actor.cpp dev.cpp)
 ament_target_dependencies(actor ${dependencies} Threads)
 install(TARGETS actor DESTINATION lib/${PROJECT_NAME})

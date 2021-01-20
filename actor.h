@@ -16,8 +16,21 @@ public:
 	~Actor();
 
 	TBOT02::Record _record;
+	bool _updateLogging;
 	bool _pose_updated;
 	bool _scan_updated;
+	bool _update_updated;
+	bool _crashed;
+	
+	double _robot_pose;
+	double _prev_robot_pose;
+	double _scan_data[3];
+
+	bool _bias_right;
+	int _bias_factor;
+	int _turn_factor;
+	
+	std::string _turn_request;
 	
 	std::string _struct;
 	std::string _model;
@@ -44,15 +57,18 @@ public:
 	std::shared_ptr<Alignment::SystemRepa> _ur;
 	
 private:
-	rclcpp::Publisher<std_msgs::msg::String>::SharedPtr _turn_request_pub;
+	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;
 
 	rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr _scan_sub;
 	rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr _odom_sub;
 	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _goal_sub;
 
+	rclcpp::TimerBase::SharedPtr _update_timer;
 	rclcpp::TimerBase::SharedPtr _act_timer;
-
+	
+	void update_callback();
 	void act_callback();
+	void update_cmd_vel(double linear, double angular);
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
 	void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
 	void goal_callback(const std_msgs::msg::String::SharedPtr msg);

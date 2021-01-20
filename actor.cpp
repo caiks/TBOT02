@@ -2,6 +2,8 @@
 #include <sstream>
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
+#include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2/LinearMath/Quaternion.h>
 
 using namespace Alignment;
 using namespace TBOT02;
@@ -23,6 +25,25 @@ namespace js = rapidjson;
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define DEG2RAD (M_PI / 180.0)
+#define RAD2DEG (180.0 / M_PI)
+
+#define CENTER 0
+#define LEFT   1
+#define RIGHT  2
+
+#define LINEAR_VELOCITY  0.3
+#define ANGULAR_VELOCITY 1.5
+
+#define GET_TB3_DIRECTION 0
+#define TB3_DRIVE_FORWARD 1
+#define TB3_RIGHT_TURN	2
+#define TB3_LEFT_TURN	 3
+
 Actor* actor_this = 0;
 
 void actor_log(const std::string& str)
@@ -40,7 +61,7 @@ void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceIn
 {
 	while (!active.terminate)
 	{
-		if (actor._pose_updated && actor._scan_updated && actor._eventId >= induceThresholdInitial)
+		if (actor._pose_updated && actor._scan_updated && actor._update_updated && actor._eventId >= induceThresholdInitial)
 			active.induce(actor._induceParametersLevel1);
 		std::this_thread::sleep_for(std::chrono::milliseconds(induceInterval));
 	}	
@@ -56,8 +77,19 @@ Actor::Actor(const std::string& args_filename)
 	auto single = histogramSingleton_u;			
 		
 	bool ok = true;
+	_scan_data[0] = 0.0;
+	_scan_data[1] = 0.0;
+	_scan_data[2] = 0.0;
+
+	_robot_pose = 0.0;
+	_prev_robot_pose = 0.0;
+
 	_pose_updated = false;
 	_scan_updated = false;
+	_update_updated = false;
+	
+	_turn_request = "";
+	
 	_eventId = 0;
 	
 	js::Document args;
@@ -80,7 +112,16 @@ Actor::Actor(const std::string& args_filename)
 			return;
 		}
 	}
-			
+				
+	_updateLogging = ARGS_BOOL(logging_update);
+	std::chrono::milliseconds updateInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(update_interval,10));
+	std::chrono::milliseconds biasInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(bias_interval,0));
+	std::chrono::milliseconds turnInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(turn_interval,0));
+	
+	_bias_right = true;
+	_bias_factor = biasInterval.count() / updateInterval.count();
+	_turn_factor = turnInterval.count() / updateInterval.count();
+	
 	std::chrono::milliseconds actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(actInterval,250));
 	_room = ARGS_STRING_DEF(room_initial,"room1");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
@@ -99,7 +140,7 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
-	_mode = ARGS_STRING_DEF(mode,"mode001");
+	_mode = ARGS_STRING(mode);
 		
 	_induceParametersLevel1.tint = _induceThreadCount;
 	_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -402,7 +443,7 @@ Actor::Actor(const std::string& args_filename)
 	}
 	
 	{
-	_turn_request_pub = this->create_publisher<std_msgs::msg::String>("turn_request", rclcpp::QoS(rclcpp::KeepLast(10)));
+	_cmd_vel_pub = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::QoS(rclcpp::KeepLast(10)));
 	
 	_scan_sub = this->create_subscription<sensor_msgs::msg::LaserScan>(
 		"scan", rclcpp::SensorDataQoS(), std::bind(&Actor::scan_callback, this, std::placeholders::_1));
@@ -411,6 +452,7 @@ Actor::Actor(const std::string& args_filename)
 	_goal_sub = this->create_subscription<std_msgs::msg::String>(
 		"goal", 10, std::bind(&Actor::goal_callback, this, std::placeholders::_1));
 
+	_update_timer = this->create_wall_timer(updateInterval, std::bind(&Actor::update_callback, this));
 	_act_timer = this->create_wall_timer(actInterval, std::bind(&Actor::act_callback, this));
 	}
 
@@ -443,6 +485,16 @@ Actor::~Actor()
 
 void Actor::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
+	tf2::Quaternion q(
+		msg->pose.pose.orientation.x,
+		msg->pose.pose.orientation.y,
+		msg->pose.pose.orientation.z,
+		msg->pose.pose.orientation.w);
+	tf2::Matrix3x3 m(q);
+	double roll, pitch, yaw;
+	m.getRPY(roll, pitch, yaw);
+	_robot_pose = yaw;
+
 	_record.sensor_pose[0] = msg->pose.pose.position.x;
 	_record.sensor_pose[1] = msg->pose.pose.position.y;
 	_record.sensor_pose[2] = msg->pose.pose.position.z;
@@ -455,6 +507,16 @@ void Actor::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 
 void Actor::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
+	uint16_t scan_angle[3] = {0, 30, 330};
+
+	for (int num = 0; num < 3; num++)
+	{
+		if (std::isinf(msg->ranges.at(scan_angle[num])))
+			_scan_data[num] = msg->range_max;
+		else
+			_scan_data[num] = msg->ranges.at(scan_angle[num]);
+	}
+
 	for (std::size_t i = 0; i < 360; i++)
 	{
 		if (std::isinf(msg->ranges.at(i)))
@@ -465,11 +527,150 @@ void Actor::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 	_scan_updated = true;
 }
 
+
+void Actor::update_cmd_vel(double linear, double angular)
+{
+	geometry_msgs::msg::Twist cmd_vel;
+	cmd_vel.linear.x  = linear;
+	cmd_vel.angular.z = angular;
+
+	_cmd_vel_pub->publish(cmd_vel);
+
+	_record.action_linear = cmd_vel.linear.x;
+	_record.action_angular = cmd_vel.angular.z;
+	_update_updated = true;
+}
+
+void Actor::update_callback()
+{
+	static uint8_t turtlebot3_state_num = 0;
+	double escape_range = 30.0 * DEG2RAD;
+	double check_forward_dist = 0.7;
+	double check_side_dist = 0.6;
+
+	if (_turn_request == "" && _bias_factor > 0 && (rand() % _bias_factor) == 0)
+	{
+		_bias_right = !_bias_right;
+		if (_updateLogging)
+		{
+			RCLCPP_INFO(this->get_logger(), "Random bias: '%s'", _bias_right ? "right" : "left");
+		}
+	}
+	
+	switch (turtlebot3_state_num)
+	{
+	case GET_TB3_DIRECTION:
+		if (_scan_data[CENTER] > check_forward_dist)
+		{
+			if (_bias_right && _scan_data[LEFT] < check_side_dist)
+			{
+				_prev_robot_pose = _robot_pose;
+				turtlebot3_state_num = TB3_RIGHT_TURN;
+			}
+			else if (_scan_data[RIGHT] < check_side_dist)
+			{
+				_prev_robot_pose = _robot_pose;
+				turtlebot3_state_num = TB3_LEFT_TURN;
+			}
+			else if (_scan_data[LEFT] < check_side_dist)
+			{
+				_prev_robot_pose = _robot_pose;
+				turtlebot3_state_num = TB3_RIGHT_TURN;
+			}
+			else
+			{
+				turtlebot3_state_num = TB3_DRIVE_FORWARD;
+			}
+		}
+
+		if (_scan_data[CENTER] < check_forward_dist)
+		{
+			_prev_robot_pose = _robot_pose;
+			turtlebot3_state_num = _bias_right ? TB3_RIGHT_TURN : TB3_LEFT_TURN;
+		}
+		break;
+
+	case TB3_DRIVE_FORWARD:
+		if (_turn_factor > 0 && (rand() % _turn_factor) == 0)
+		{
+			_prev_robot_pose = _robot_pose;
+			bool right = (rand() % 2) == 0;
+			turtlebot3_state_num = right ? TB3_RIGHT_TURN : TB3_LEFT_TURN;
+			if (_updateLogging)
+			{
+				RCLCPP_INFO(this->get_logger(), "Random turn: '%s'", right ? "right" : "left");
+			}
+			break;
+		}
+		if (_turn_request != "")
+		{
+			_prev_robot_pose = _robot_pose;
+			bool right = _turn_request[0] == 'r' || _turn_request[0] == 'R';
+			turtlebot3_state_num = right ? TB3_RIGHT_TURN : TB3_LEFT_TURN;
+			if (_updateLogging)
+			{
+				
+				RCLCPP_INFO(this->get_logger(), "Executing turn request: '%s'", right ? "right" : "left");
+			}
+			_turn_request = "";
+			break;
+		}
+		update_cmd_vel(LINEAR_VELOCITY, 0.0);
+		turtlebot3_state_num = GET_TB3_DIRECTION;
+		break;
+
+	case TB3_RIGHT_TURN:
+		if (_turn_request != "")
+		{
+			bool right = _turn_request[0] == 'r' || _turn_request[0] == 'R';
+			if (_updateLogging)
+			{
+				
+				RCLCPP_INFO(this->get_logger(), "Ignoring turn request: '%s'", right ? "right" : "left");
+			}
+			_turn_request = "";
+		}
+		if (fabs(_prev_robot_pose - _robot_pose) >= escape_range)
+			turtlebot3_state_num = GET_TB3_DIRECTION;
+		else
+			update_cmd_vel(0.0, -1 * ANGULAR_VELOCITY);
+		break;
+
+	case TB3_LEFT_TURN:
+		if (_turn_request != "")
+		{
+			bool right = _turn_request[0] == 'r' || _turn_request[0] == 'R';
+			if (_updateLogging)
+			{
+				
+				RCLCPP_INFO(this->get_logger(), "Ignoring turn request: '%s'", right ? "right" : "left");
+			}
+			_turn_request = "";
+		}
+		if (fabs(_prev_robot_pose - _robot_pose) >= escape_range)
+			turtlebot3_state_num = GET_TB3_DIRECTION;
+		else
+			update_cmd_vel(0.0, ANGULAR_VELOCITY);
+		break;
+
+	default:
+		turtlebot3_state_num = GET_TB3_DIRECTION;
+		break;
+	}
+}
+
 void Actor::act_callback()
 {
-	if (!_pose_updated || !_scan_updated || !_system)
+	if (_crashed || !_pose_updated || !_scan_updated || !_update_updated || !_system)
 		return;
-
+		
+	if (_record.sensor_pose[2] >= 0.02)
+	{
+		_crashed = true;
+		RCLCPP_INFO(this->get_logger(), "Crashed");		
+		return;
+	}
+	
 	std::unique_ptr<HistoryRepa> hr;
 	{
 		SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ _record });	
