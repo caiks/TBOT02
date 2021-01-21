@@ -474,24 +474,32 @@ Actor::Actor(const std::string& args_filename)
 
 Actor::~Actor()
 {
-	if (_system && _struct=="struct001" && _model!="")
+	if (_system && _struct=="struct001")
 	{
 		for (std::size_t m = 0; m < _level1Count; m++)
 		{
 			auto& activeA = *_level1[m];
 			activeA.terminate = true;
-			ActiveIOParameters ppio;
-			ppio.filename = activeA.name+".ac";
-			activeA.logging = true;
-			activeA.dump(ppio);			
+			if ( _model!="")
+			{
+				ActiveIOParameters ppio;
+				ppio.filename = activeA.name+".ac";
+				activeA.logging = true;
+				activeA.dump(ppio);						
+			}
 		}
 		{
 			auto& activeA = *_level2.front();	
 			activeA.terminate = true;
-			ActiveIOParameters ppio;
-			ppio.filename = activeA.name+".ac";
-			activeA.dump(ppio);							
+			if ( _model!="")
+			{
+				ActiveIOParameters ppio;
+				ppio.filename = activeA.name+".ac";
+				activeA.dump(ppio);		
+			}			
 		}	
+		for (auto& t : _threads)
+			t.join();	
 	}
 	RCLCPP_INFO(this->get_logger(), "TBOT02 actor node has been terminated");
 }
