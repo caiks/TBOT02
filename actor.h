@@ -38,9 +38,9 @@ public:
 	std::chrono::milliseconds _induceInterval;
 	std::string _mode;
 	
-	std::string _room;
+	std::string _goal;
 
-	std::map<std::string, Alignment::Histogram> _room_location_goal;
+	std::map<std::string, std::map<std::string,std::string>> _goalsLocationsNext;
 	
 	std::shared_ptr<Alignment::ActiveSystem> _system;
 	std::shared_ptr<Alignment::ActiveEventsRepa> _events;
@@ -55,6 +55,8 @@ public:
 	
 	std::shared_ptr<Alignment::System> _uu;
 	std::shared_ptr<Alignment::SystemRepa> _ur;
+	
+	double _mode1DiscountRate;	
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;

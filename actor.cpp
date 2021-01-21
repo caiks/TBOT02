@@ -126,7 +126,7 @@ Actor::Actor(const std::string& args_filename)
 	
 	_eventId = 0;
 	std::chrono::milliseconds actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(act_interval,250));
-	_room = ARGS_STRING_DEF(room_initial,"room1");
+	_goal = ARGS_STRING_DEF(goal_initial,"room5");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
 	std::string modelInitial = ARGS_STRING(model_initial);
@@ -143,6 +143,7 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
 	_mode = ARGS_STRING(mode);		
+	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,1.0);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -170,7 +171,7 @@ Actor::Actor(const std::string& args_filename)
 		_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);		
 	}
 
-	EVAL(_room);
+	EVAL(_goal);
 	EVAL(_struct);
 	EVAL(_model);
 	EVAL(_mode);
@@ -381,8 +382,6 @@ Actor::Actor(const std::string& args_filename)
 	}
 	
 	{
-		Variable location("location");
-		Variable room_next("room_next");
 		String3List ll{
 			String3("room1","door12","room1"),
 			String3("room1","door13","room1"),
@@ -452,7 +451,7 @@ Actor::Actor(const std::string& args_filename)
 			String3("room6","room6","room6")
 		};
 		for (auto t : ll)
-			_room_location_goal[std::get<0>(t)] = *add(_room_location_goal[std::get<0>(t)], *single(State(VarValPairList{VarValPair(location, std::get<1>(t)),VarValPair(room_next, std::get<2>(t))}),1));
+			_goalsLocationsNext[std::get<0>(t)][std::get<1>(t)] = std::get<2>(t);
 	}
 	
 	{
@@ -735,11 +734,8 @@ void Actor::act_callback()
 			return historiesHistogram(*systemsHistoryRepasHistory_u(uu,ur,hr));
 		};
 		auto hrsel = eventsHistoryRepasHistoryRepaSelection_u;
-		Variable motor("motor");
-		Variable location("location");
-		Variable room_next("room_next");
-		bool ok = true;
-		
+
+		bool ok = true;		
 		auto& activeA = *_level2.front();
 		if (!activeA.terminate)	
 		{			
@@ -750,34 +746,134 @@ void Actor::act_callback()
 			std::size_t sliceA = ok ? activeA.historySparse->arr[historyEventA] : 0;
 			SizeSet setEventA = ok ? activeA.historySlicesSetEvent[sliceA] : SizeSet();
 			std::shared_ptr<HistoryRepa> hr = ok ? activeA.underlyingHistoryRepa.front() : 0;
-			Histogram histogramA;
 			if (ok)
 			{
+				Variable motor("motor");
+				Variable location("location");
+				Variable room_next("room_next");
+				Histogram histogramA;
 				SizeList ev(setEventA.begin(),setEventA.end());
 				histogramA = *trim(*hraa(*_uu, *_ur, *hrsel(ev.size(), ev.data(), *hr)));
+				// EVAL(size(histogramA))
+				// EVAL(histogramA);
+				EVAL(*ared(histogramA, VarUSet{location}));
+				// EVAL(*ared(histogramA, VarUSet{motor}));
+				// EVAL(_goal);
+				// EVAL(_goal_location_goal[_goal]);				
 			}
-			// EVAL(size(histogramA))
-			// EVAL(histogramA);
-			// EVAL(*ared(histogramA, VarUSet{location}));
-			// EVAL(*ared(histogramA, VarUSet{motor}));
-			// EVAL(_room);
-			// EVAL(_room_location_goal[_room]);	
+			// now calculate the present value for each motor value
+			if (ok)
+			{
+				std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
+				std::map<std::string,std::size_t> locationsInt;
+				for (std::size_t i = 0; i < locations.size(); i++)
+					locationsInt[locations[i]] = i;				
+				auto locationsGoal = _goalsLocationsNext[_goal];
+				EVAL(locationsGoal);
+				auto over = activeA.historyOverflow;
+				auto& mm = _ur->mapVarSize();
+				auto& mvv = hr->mapVarInt();
+				auto motor = mvv[mm[Variable("motor")]];
+				auto location = mvv[mm[Variable("location")]];
+				std::map<std::size_t, double> actionsCount;
+				std::map<std::size_t, double> actionsPV;
+				auto n = hr->dimension;
+				auto z = hr->size;
+				auto y = historyEventA;
+				auto rr = hr->arr;	
+				std::size_t	shortest = 0;
+				if (ok)
+				{
+					bool shortestFound = false;
+					for (auto ev : setEventA)
+					{
+						EVAL(ev);
+						auto curr = rr[ev*n+location];
+						EVAL((std::size_t)curr);
+						auto next = locationsInt[locationsGoal[locations[curr]]];
+						EVAL((std::size_t)next);
+						if (next == curr)
+						{
+							shortest = 0;
+							break;
+						}
+						auto j = ev + 1;	
+						while ((j < y || (over && j > y && j < y+z)))
+						{
+							auto loc = rr[(j%z)*n+location];
+							// EVAL(j);
+							// EVAL(loc);
+							if (loc == next)
+							{
+								shortest = shortestFound ? std::min(shortest, j-ev) : j-ev;
+								shortestFound = true;
+							}
+							if (loc != curr)
+								break;
+							j++;
+						}
+					}					
+				}
+				EVAL(shortest);
+				if (shortest)
+				{
+					double discount = _mode1DiscountRate / shortest;
+					for (auto ev : setEventA)
+					{
+						auto curr = rr[ev*n+location];
+						auto next = locationsInt[locationsGoal[locations[curr]]];
+						auto j = ev + 1;	
+						bool nextFound = false;
+						while ((j < y || (over && j > y && j < y+z)))
+						{
+							auto loc = rr[(j%z)*n+location];
+							nextFound = loc == next;
+							if (loc != curr)
+								break;
+							j++;
+						}
+						auto action = rr[ev*n+motor];
+						if (nextFound)
+						{
+							actionsCount[action] += 1.0;
+							actionsPV[action] += std::exp(-1.0 * discount * (j-ev));
+						}
+						else if (action == 0)
+						{
+							actionsCount[2] += 1.0;
+							actionsPV[2] += std::exp(-1.0 * discount * (j-ev));
+						}
+						else if (action == 1)
+						{
+							actionsCount[0] += 0.5;
+							actionsPV[0] += std::exp(-1.0 * discount * (j-ev));
+							actionsCount[2] += 0.5;
+							actionsPV[2] += std::exp(-1.0 * discount * (j-ev));
+						}
+						else
+						{
+							actionsCount[0] += 1.0;
+							actionsPV[0] += std::exp(-1.0 * discount * (j-ev));
+						}
+					}	
+					for (auto& p : actionsCount)
+						actionsPV[p.first] /= p.second;
+					EVAL(actionsPV);
+					EVAL(actionsCount);
+				}
+			}
+			if (ok)
 			{
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
-				if (sizeA)
-				{
-					LOG activeA.name << "\tmode: " << _mode << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG				
-				}					
+				LOG activeA.name << "\tmode: " << _mode << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
 			}
-
-
 		}		
 	}
 }
 
 void Actor::goal_callback(const std_msgs::msg::String::SharedPtr msg)
 {
-	_room = msg->data;
+	_goal = msg->data;
 	std::ostringstream str; 
 	str << "Received goal: " << msg->data;
 	RCLCPP_INFO(this->get_logger(), str.str());
