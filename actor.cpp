@@ -743,6 +743,7 @@ void Actor::act_callback()
 		auto& activeA = *_level2.front();
 		if (!activeA.terminate)	
 		{			
+			auto mark = clk::now();
 			std::lock_guard<std::mutex> guard(activeA.mutex);
 			ok = ok && (activeA.historyOverflow	|| activeA.historyEvent);
 			std::size_t historyEventA = ok ? (activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historyOverflow - 1) : 0;
@@ -765,7 +766,7 @@ void Actor::act_callback()
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
 				if (sizeA)
 				{
-					LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
+					LOG activeA.name << "\tmode: " << _mode << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG				
 				}					
 			}
 
