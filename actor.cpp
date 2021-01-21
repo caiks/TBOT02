@@ -125,7 +125,7 @@ Actor::Actor(const std::string& args_filename)
 	_turn_factor = turnInterval.count() / updateInterval.count();
 	
 	_eventId = 0;
-	std::chrono::milliseconds actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(actInterval,250));
+	std::chrono::milliseconds actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(act_interval,250));
 	_room = ARGS_STRING_DEF(room_initial,"room1");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
