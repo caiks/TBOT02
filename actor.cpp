@@ -13,6 +13,9 @@ namespace js = rapidjson;
 
 #define EVAL(x) { std::ostringstream str; str << #x << ": " << (x); RCLCPP_INFO(this->get_logger(), str.str());}
 
+#define UNLOG ; str.flush(); RCLCPP_INFO(this->get_logger(), str.str());}
+#define LOG { std::ostringstream str; str << 
+
 #define ARGS_STRING_DEF(x,y) args.HasMember(#x) && args[#x].IsString() ? args[#x].GetString() : y
 #define ARGS_STRING(x) ARGS_STRING_DEF(x,"")
 #define ARGS_INT_DEF(x,y) args.HasMember(#x) && args[#x].IsInt() ? args[#x].GetInt() : y
@@ -68,6 +71,13 @@ void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceIn
 	return;
 };
 
+void run_update(Active& active, ActiveUpdateParameters ppu)
+{
+	if (!active.terminate)
+		active.update(ppu);
+	return;
+};
+
 Actor::Actor(const std::string& args_filename)
 : Node("TBOT02_actor_node")
 {
@@ -75,23 +85,7 @@ Actor::Actor(const std::string& args_filename)
 	typedef std::vector<String3> String3List;	
 	auto add = pairHistogramsAdd_u;
 	auto single = histogramSingleton_u;			
-		
-	bool ok = true;
-	_scan_data[0] = 0.0;
-	_scan_data[1] = 0.0;
-	_scan_data[2] = 0.0;
-
-	_robot_pose = 0.0;
-	_prev_robot_pose = 0.0;
-
-	_pose_updated = false;
-	_scan_updated = false;
-	_update_updated = false;
-	
-	_turn_request = "";
-	
-	_eventId = 0;
-	
+			
 	js::Document args;
 	{
 		std::ifstream in;
@@ -112,23 +106,31 @@ Actor::Actor(const std::string& args_filename)
 			return;
 		}
 	}
-				
+
+	_scan_data[0] = 0.0;
+	_scan_data[1] = 0.0;
+	_scan_data[2] = 0.0;
+	_robot_pose = 0.0;
+	_prev_robot_pose = 0.0;
+	_pose_updated = false;
+	_scan_updated = false;
+	_update_updated = false;
+	_turn_request = "";
 	_updateLogging = ARGS_BOOL(logging_update);
 	std::chrono::milliseconds updateInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(update_interval,10));
 	std::chrono::milliseconds biasInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(bias_interval,0));
 	std::chrono::milliseconds turnInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(turn_interval,0));
-	
 	_bias_right = true;
 	_bias_factor = biasInterval.count() / updateInterval.count();
 	_turn_factor = turnInterval.count() / updateInterval.count();
 	
+	_eventId = 0;
 	std::chrono::milliseconds actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(actInterval,250));
 	_room = ARGS_STRING_DEF(room_initial,"room1");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
 	std::string modelInitial = ARGS_STRING(model_initial);
 	_induceThreadCount = ARGS_INT_DEF(induceThreadCount,4);
-
 	_level1Count = ARGS_INT_DEF(level1Count,12);
 	bool level1Logging = ARGS_BOOL(logging_level1);
 	std::size_t activeSizeLevel1 = ARGS_INT_DEF(activeSizeLevel1,10000);
@@ -140,32 +142,33 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
-	_mode = ARGS_STRING(mode);
-		
-	_induceParametersLevel1.tint = _induceThreadCount;
-	_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
-	_induceParametersLevel1.lmax = ARGS_INT_DEF(induceParametersLevel1.lmax,8);
-	_induceParametersLevel1.xmax = ARGS_INT_DEF(induceParametersLevel1.xmax,128);
-	_induceParametersLevel1.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
-	_induceParametersLevel1.omax = ARGS_INT_DEF(induceParametersLevel1.omax,10);
-	_induceParametersLevel1.bmax = ARGS_INT_DEF(induceParametersLevel1.bmax,10*3);
-	_induceParametersLevel1.mmax = ARGS_INT_DEF(induceParametersLevel1.mmax,3);
-	_induceParametersLevel1.umax = ARGS_INT_DEF(induceParametersLevel1.umax,128);
-	_induceParametersLevel1.pmax = ARGS_INT_DEF(induceParametersLevel1.pmax,1);
-	_induceParametersLevel1.mult = ARGS_INT_DEF(induceParametersLevel1.mult,1);
-	_induceParametersLevel1.seed = ARGS_INT_DEF(induceParametersLevel1.seed,5);
-	_induceParameters.tint = _induceThreadCount;		
-	_induceParameters.wmax = ARGS_INT_DEF(induceParameters.wmax,18);
-	_induceParameters.lmax = ARGS_INT_DEF(induceParameters.lmax,8);
-	_induceParameters.xmax = ARGS_INT_DEF(induceParameters.xmax,128);
-	_induceParameters.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
-	_induceParameters.omax = ARGS_INT_DEF(induceParameters.omax,10);
-	_induceParameters.bmax = ARGS_INT_DEF(induceParameters.bmax,10*3);
-	_induceParameters.mmax = ARGS_INT_DEF(induceParameters.mmax,3);
-	_induceParameters.umax = ARGS_INT_DEF(induceParameters.umax,128);
-	_induceParameters.pmax = ARGS_INT_DEF(induceParameters.pmax,1);
-	_induceParameters.mult = ARGS_INT_DEF(induceParameters.mult,1);
-	_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);
+	_mode = ARGS_STRING(mode);		
+	{
+		_induceParametersLevel1.tint = _induceThreadCount;
+		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
+		_induceParametersLevel1.lmax = ARGS_INT_DEF(induceParametersLevel1.lmax,8);
+		_induceParametersLevel1.xmax = ARGS_INT_DEF(induceParametersLevel1.xmax,128);
+		_induceParametersLevel1.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
+		_induceParametersLevel1.omax = ARGS_INT_DEF(induceParametersLevel1.omax,10);
+		_induceParametersLevel1.bmax = ARGS_INT_DEF(induceParametersLevel1.bmax,10*3);
+		_induceParametersLevel1.mmax = ARGS_INT_DEF(induceParametersLevel1.mmax,3);
+		_induceParametersLevel1.umax = ARGS_INT_DEF(induceParametersLevel1.umax,128);
+		_induceParametersLevel1.pmax = ARGS_INT_DEF(induceParametersLevel1.pmax,1);
+		_induceParametersLevel1.mult = ARGS_INT_DEF(induceParametersLevel1.mult,1);
+		_induceParametersLevel1.seed = ARGS_INT_DEF(induceParametersLevel1.seed,5);
+		_induceParameters.tint = _induceThreadCount;		
+		_induceParameters.wmax = ARGS_INT_DEF(induceParameters.wmax,18);
+		_induceParameters.lmax = ARGS_INT_DEF(induceParameters.lmax,8);
+		_induceParameters.xmax = ARGS_INT_DEF(induceParameters.xmax,128);
+		_induceParameters.znnmax = 200000.0 * 2.0 * 300.0 * 300.0 * _induceThreadCount;
+		_induceParameters.omax = ARGS_INT_DEF(induceParameters.omax,10);
+		_induceParameters.bmax = ARGS_INT_DEF(induceParameters.bmax,10*3);
+		_induceParameters.mmax = ARGS_INT_DEF(induceParameters.mmax,3);
+		_induceParameters.umax = ARGS_INT_DEF(induceParameters.umax,128);
+		_induceParameters.pmax = ARGS_INT_DEF(induceParameters.pmax,1);
+		_induceParameters.mult = ARGS_INT_DEF(induceParameters.mult,1);
+		_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);		
+	}
 
 	EVAL(_room);
 	EVAL(_struct);
@@ -268,6 +271,11 @@ Actor::Actor(const std::string& args_filename)
 			activeA.logging = level1Logging;
 			activeA.underlyingEventsRepa.push_back(_events);
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+			std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
+			if (sizeA)
+			{
+				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
+			}
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
 		}
 	
@@ -362,7 +370,12 @@ Actor::Actor(const std::string& args_filename)
 				auto& activeB = *_level1[m];
 				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
 			}
-			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);		
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
+			std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
+			if (sizeA)
+			{
+				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
+			}			
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
 		}
 	}
@@ -503,6 +516,11 @@ void Actor::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 	_record.sensor_pose[5] = msg->pose.pose.orientation.z;
 	_record.sensor_pose[6] = msg->pose.pose.orientation.w;
 	_pose_updated = true;
+	if (_record.sensor_pose[2] >= 0.02)
+	{
+		_crashed = true;
+		RCLCPP_INFO(this->get_logger(), "Crashed");		
+	}	
 }
 
 void Actor::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -548,6 +566,9 @@ void Actor::update_callback()
 	double check_forward_dist = 0.7;
 	double check_side_dist = 0.6;
 
+	if (_crashed)
+		return;
+		
 	if (_turn_request == "" && _bias_factor > 0 && (rand() % _bias_factor) == 0)
 	{
 		_bias_right = !_bias_right;
@@ -664,13 +685,6 @@ void Actor::act_callback()
 	if (_crashed || !_pose_updated || !_scan_updated || !_update_updated || !_system)
 		return;
 		
-	if (_record.sensor_pose[2] >= 0.02)
-	{
-		_crashed = true;
-		RCLCPP_INFO(this->get_logger(), "Crashed");		
-		return;
-	}
-	
 	std::unique_ptr<HistoryRepa> hr;
 	{
 		SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ _record });	
@@ -678,12 +692,6 @@ void Actor::act_callback()
 	}
 	_eventId++;
 	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
-	auto run_update = [](Active& active, ActiveUpdateParameters ppu)
-	{
-		if (!active.terminate)
-			active.update(ppu);
-		return;
-	};
 	{		
 		std::vector<std::thread> threadsLevel1;
 		threadsLevel1.reserve(_level1Count);
@@ -741,10 +749,19 @@ void Actor::act_callback()
 			}
 			// EVAL(size(histogramA))
 			// EVAL(histogramA);
-			EVAL(*ared(histogramA, VarUSet{location}));
-			EVAL(*ared(histogramA, VarUSet{motor}));
+			// EVAL(*ared(histogramA, VarUSet{location}));
+			// EVAL(*ared(histogramA, VarUSet{motor}));
 			// EVAL(_room);
 			// EVAL(_room_location_goal[_room]);	
+			{
+				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
+				if (sizeA)
+				{
+					LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
+				}					
+			}
+
+
 		}		
 	}
 }
