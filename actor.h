@@ -57,6 +57,8 @@ public:
 	std::shared_ptr<Alignment::SystemRepa> _ur;
 	
 	double _mode1DiscountRate;	
+	double _mode1Turnaway;	
+	bool _mode1Probabilistic;	
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;

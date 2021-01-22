@@ -144,6 +144,8 @@ Actor::Actor(const std::string& args_filename)
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
 	_mode = ARGS_STRING(mode);		
 	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,1.0);
+	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,0.1);
+	_mode1Probabilistic = ARGS_BOOL(probabilistic_mode);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -505,29 +507,33 @@ Actor::~Actor()
 
 void Actor::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-	tf2::Quaternion q(
-		msg->pose.pose.orientation.x,
-		msg->pose.pose.orientation.y,
-		msg->pose.pose.orientation.z,
-		msg->pose.pose.orientation.w);
-	tf2::Matrix3x3 m(q);
-	double roll, pitch, yaw;
-	m.getRPY(roll, pitch, yaw);
-	_robot_pose = yaw;
-
-	_record.sensor_pose[0] = msg->pose.pose.position.x;
-	_record.sensor_pose[1] = msg->pose.pose.position.y;
-	_record.sensor_pose[2] = msg->pose.pose.position.z;
-	_record.sensor_pose[3] = msg->pose.pose.orientation.x;
-	_record.sensor_pose[4] = msg->pose.pose.orientation.y;
-	_record.sensor_pose[5] = msg->pose.pose.orientation.z;
-	_record.sensor_pose[6] = msg->pose.pose.orientation.w;
-	_pose_updated = true;
-	if (_record.sensor_pose[2] >= 0.02)
+	if (!_crashed)
 	{
-		_crashed = true;
-		RCLCPP_INFO(this->get_logger(), "Crashed");		
-	}	
+		tf2::Quaternion q(
+			msg->pose.pose.orientation.x,
+			msg->pose.pose.orientation.y,
+			msg->pose.pose.orientation.z,
+			msg->pose.pose.orientation.w);
+		tf2::Matrix3x3 m(q);
+		double roll, pitch, yaw;
+		m.getRPY(roll, pitch, yaw);
+		_robot_pose = yaw;
+
+		_record.sensor_pose[0] = msg->pose.pose.position.x;
+		_record.sensor_pose[1] = msg->pose.pose.position.y;
+		_record.sensor_pose[2] = msg->pose.pose.position.z;
+		_record.sensor_pose[3] = msg->pose.pose.orientation.x;
+		_record.sensor_pose[4] = msg->pose.pose.orientation.y;
+		_record.sensor_pose[5] = msg->pose.pose.orientation.z;
+		_record.sensor_pose[6] = msg->pose.pose.orientation.w;
+		_pose_updated = true;
+		if (msg->pose.pose.position.z >= 0.02)
+		{
+			_crashed = true;
+			RCLCPP_INFO(this->get_logger(), "Crashed");		
+		}			
+	}
+
 }
 
 void Actor::scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -742,40 +748,42 @@ void Actor::act_callback()
 			auto mark = clk::now();
 			std::lock_guard<std::mutex> guard(activeA.mutex);
 			ok = ok && (activeA.historyOverflow	|| activeA.historyEvent);
-			std::size_t historyEventA = ok ? (activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historyOverflow - 1) : 0;
+			std::size_t historyEventA = ok ? (activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historySize - 1) : 0;
 			std::size_t sliceA = ok ? activeA.historySparse->arr[historyEventA] : 0;
 			SizeSet setEventA = ok ? activeA.historySlicesSetEvent[sliceA] : SizeSet();
 			std::shared_ptr<HistoryRepa> hr = ok ? activeA.underlyingHistoryRepa.front() : 0;
-			if (ok)
-			{
-				Variable motor("motor");
-				Variable location("location");
-				Variable room_next("room_next");
-				Histogram histogramA;
-				SizeList ev(setEventA.begin(),setEventA.end());
-				histogramA = *trim(*hraa(*_uu, *_ur, *hrsel(ev.size(), ev.data(), *hr)));
-				// EVAL(size(histogramA))
-				// EVAL(histogramA);
-				EVAL(*ared(histogramA, VarUSet{location}));
-				// EVAL(*ared(histogramA, VarUSet{motor}));
-				// EVAL(_goal);
-				// EVAL(_goal_location_goal[_goal]);				
-			}
+			// if (ok)
+			// {
+				// Variable motor("motor");
+				// Variable location("location");
+				// Variable room_next("room_next");
+				// Histogram histogramA;
+				// SizeList ev(setEventA.begin(),setEventA.end());
+				// histogramA = *trim(*hraa(*_uu, *_ur, *hrsel(ev.size(), ev.data(), *hr)));
+				// // EVAL(size(histogramA))
+				// // EVAL(histogramA);
+				// EVAL(*ared(histogramA, VarUSet{location}));
+				// // EVAL(*ared(histogramA, VarUSet{motor}));
+				// // EVAL(_goal);
+				// // EVAL(_goal_location_goal[_goal]);				
+			// }
 			// now calculate the present value for each motor value
 			if (ok)
 			{
 				std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
 				std::map<std::string,std::size_t> locationsInt;
 				for (std::size_t i = 0; i < locations.size(); i++)
-					locationsInt[locations[i]] = i;				
+					locationsInt[locations[i]] = i;	
+				const char turn_left = 0;
+				const char ahead = 1;
+				const char turn_right = 2;
 				auto locationsGoal = _goalsLocationsNext[_goal];
-				EVAL(locationsGoal);
+				// EVAL(locationsGoal);
 				auto over = activeA.historyOverflow;
 				auto& mm = _ur->mapVarSize();
 				auto& mvv = hr->mapVarInt();
 				auto motor = mvv[mm[Variable("motor")]];
 				auto location = mvv[mm[Variable("location")]];
-				std::map<std::size_t, double> actionsCount;
 				std::map<std::size_t, double> actionsPV;
 				auto n = hr->dimension;
 				auto z = hr->size;
@@ -787,22 +795,14 @@ void Actor::act_callback()
 					bool shortestFound = false;
 					for (auto ev : setEventA)
 					{
-						EVAL(ev);
 						auto curr = rr[ev*n+location];
-						EVAL((std::size_t)curr);
 						auto next = locationsInt[locationsGoal[locations[curr]]];
-						EVAL((std::size_t)next);
 						if (next == curr)
-						{
-							shortest = 0;
-							break;
-						}
+							continue;
 						auto j = ev + 1;	
 						while ((j < y || (over && j > y && j < y+z)))
 						{
 							auto loc = rr[(j%z)*n+location];
-							// EVAL(j);
-							// EVAL(loc);
 							if (loc == next)
 							{
 								shortest = shortestFound ? std::min(shortest, j-ev) : j-ev;
@@ -817,11 +817,14 @@ void Actor::act_callback()
 				EVAL(shortest);
 				if (shortest)
 				{
+					std::map<std::size_t, double> actionsCount;
 					double discount = _mode1DiscountRate / shortest;
 					for (auto ev : setEventA)
 					{
 						auto curr = rr[ev*n+location];
 						auto next = locationsInt[locationsGoal[locations[curr]]];
+						if (next == curr)
+							continue;
 						auto j = ev + 1;	
 						bool nextFound = false;
 						while ((j < y || (over && j > y && j < y+z)))
@@ -838,34 +841,77 @@ void Actor::act_callback()
 							actionsCount[action] += 1.0;
 							actionsPV[action] += std::exp(-1.0 * discount * (j-ev));
 						}
-						else if (action == 0)
+						else if (action == turn_left)
 						{
-							actionsCount[2] += 1.0;
-							actionsPV[2] += std::exp(-1.0 * discount * (j-ev));
+							actionsCount[turn_right] += 1.0;
+							actionsPV[turn_right] += std::exp(-1.0 * discount * (j-ev));
 						}
-						else if (action == 1)
+						else if (action == turn_right)
 						{
-							actionsCount[0] += 0.5;
-							actionsPV[0] += std::exp(-1.0 * discount * (j-ev));
-							actionsCount[2] += 0.5;
-							actionsPV[2] += std::exp(-1.0 * discount * (j-ev));
+							actionsCount[turn_left] += 1.0;
+							actionsPV[turn_left] += std::exp(-1.0 * discount * (j-ev));
 						}
 						else
 						{
-							actionsCount[0] += 1.0;
-							actionsPV[0] += std::exp(-1.0 * discount * (j-ev));
+							actionsCount[turn_left] += _mode1Turnaway * 0.5;
+							actionsPV[turn_left] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
+							actionsCount[ahead] += 1.0 - _mode1Turnaway;
+							actionsPV[ahead] += (1.0 - _mode1Turnaway)*std::exp(-1.0 * discount * (j-ev));
+							actionsCount[turn_right] += _mode1Turnaway * 0.5;
+							actionsPV[turn_right] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
 						}
 					}	
 					for (auto& p : actionsCount)
-						actionsPV[p.first] /= p.second;
+						if (p.second > 0.0)
+							actionsPV[p.first] /= p.second;
+					double norm = 0.0;
+					for (auto& p : actionsPV)
+						norm += p.second;	
+					for (auto& p : actionsPV)
+						actionsPV[p.first] /= norm;							
 					EVAL(actionsPV);
-					EVAL(actionsCount);
+					EVAL(actionsCount);				
+				}
+				if (ok && shortest)
+				{
+					char action = ahead;
+					if (_mode1Probabilistic)
+					{
+						auto r = (double) rand() / (RAND_MAX);
+						double accum = 0.0;
+						for (auto& p : actionsPV)
+						{
+							accum += p.second;
+							if (r < accum)
+							{
+								action = p.first;
+								break;
+							}
+						}						
+					}
+					else
+					{
+						if (actionsPV[turn_left] > actionsPV[ahead] && actionsPV[turn_left] > actionsPV[turn_right])
+							action = turn_left;
+						else if (actionsPV[turn_right] > actionsPV[ahead] && actionsPV[turn_right] > actionsPV[turn_left])
+							action = turn_right;						
+					}	
+					if (action == turn_left)
+					{
+						_turn_request = "left";
+						_bias_right = false;
+					}
+					else if (action == turn_right)
+					{
+						_turn_request = "right";
+						_bias_right = true;
+					}					
 				}
 			}
 			if (ok)
 			{
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
-				LOG activeA.name << "\tmode: " << _mode << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
+				LOG activeA.name << " " << _mode << "\trequest: " << _turn_request << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
 			}
 		}		
 	}
