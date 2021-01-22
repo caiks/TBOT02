@@ -59,6 +59,9 @@ public:
 	double _mode1DiscountRate;	
 	double _mode1Turnaway;	
 	bool _mode1Probabilistic;	
+	bool _mode1Shortest;	
+	bool _mode1ExpectedPV;	
+	bool _mode1Repulsive;	
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;

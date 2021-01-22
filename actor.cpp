@@ -144,8 +144,11 @@ Actor::Actor(const std::string& args_filename)
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
 	_mode = ARGS_STRING(mode);		
 	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,1.0);
-	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,0.1);
-	_mode1Probabilistic = ARGS_BOOL(probabilistic_mode);
+	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,1.0);
+	_mode1Probabilistic = ARGS_BOOL(probabilistic_pv);
+	_mode1Shortest = ARGS_BOOL_DEF(shortest_success,false);
+	_mode1ExpectedPV = ARGS_BOOL_DEF(expected_pv,false);
+	_mode1Repulsive = ARGS_BOOL_DEF(repulsive,true);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -789,9 +792,10 @@ void Actor::act_callback()
 				auto z = hr->size;
 				auto y = historyEventA;
 				auto rr = hr->arr;	
-				std::size_t	shortest = 0;
-				if (ok)
+				double	steps = 0.0;
+				if (_mode1Shortest)
 				{
+					std::size_t shortest = 0;
 					bool shortestFound = false;
 					for (auto ev : setEventA)
 					{
@@ -812,13 +816,41 @@ void Actor::act_callback()
 								break;
 							j++;
 						}
-					}					
+					}	
+					if (shortest)
+						steps = (double)shortest;
 				}
-				EVAL(shortest);
-				if (shortest)
+				else
+				{
+					std::size_t stepsCount = 0;
+					for (auto ev : setEventA)
+					{
+						auto curr = rr[ev*n+location];
+						auto next = locationsInt[locationsGoal[locations[curr]]];
+						if (next == curr)
+							continue;
+						auto j = ev + 1;	
+						while ((j < y || (over && j > y && j < y+z)))
+						{
+							auto loc = rr[(j%z)*n+location];
+							if (loc == next)
+							{
+								steps += j-ev;
+								stepsCount++;
+							}
+							if (loc != curr)
+								break;
+							j++;
+						}
+					}	
+					if (stepsCount)
+						steps /= stepsCount;
+				}
+				EVAL(steps);
+				if (steps > 0.0)
 				{
 					std::map<std::size_t, double> actionsCount;
-					double discount = _mode1DiscountRate / shortest;
+					double discount = _mode1DiscountRate / steps;
 					for (auto ev : setEventA)
 					{
 						auto curr = rr[ev*n+location];
@@ -827,14 +859,20 @@ void Actor::act_callback()
 							continue;
 						auto j = ev + 1;	
 						bool nextFound = false;
+						bool found = false;
 						while ((j < y || (over && j > y && j < y+z)))
 						{
 							auto loc = rr[(j%z)*n+location];
 							nextFound = loc == next;
 							if (loc != curr)
+							{
+								found = true;
 								break;
+							}
 							j++;
 						}
+						if (!found)
+							continue;
 						auto action = rr[ev*n+motor];
 						if (nextFound)
 						{
@@ -855,15 +893,18 @@ void Actor::act_callback()
 						{
 							actionsCount[turn_left] += _mode1Turnaway * 0.5;
 							actionsPV[turn_left] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
-							actionsCount[ahead] += 1.0 - _mode1Turnaway;
-							actionsPV[ahead] += (1.0 - _mode1Turnaway)*std::exp(-1.0 * discount * (j-ev));
+							// actionsCount[ahead] += 1.0 - _mode1Turnaway;
+							// actionsPV[ahead] += (1.0 - _mode1Turnaway)*std::exp(-1.0 * discount * (j-ev));
 							actionsCount[turn_right] += _mode1Turnaway * 0.5;
 							actionsPV[turn_right] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
 						}
 					}	
-					for (auto& p : actionsCount)
-						if (p.second > 0.0)
-							actionsPV[p.first] /= p.second;
+					if (_mode1ExpectedPV)
+					{
+						for (auto& p : actionsCount)
+							if (p.second > 0.0)
+								actionsPV[p.first] /= p.second;						
+					}
 					double norm = 0.0;
 					for (auto& p : actionsPV)
 						norm += p.second;	
@@ -872,7 +913,7 @@ void Actor::act_callback()
 					EVAL(actionsPV);
 					EVAL(actionsCount);				
 				}
-				if (ok && shortest)
+				if (steps > 0.0)
 				{
 					char action = ahead;
 					if (_mode1Probabilistic)
