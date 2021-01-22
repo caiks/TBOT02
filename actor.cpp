@@ -143,7 +143,7 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
 	_mode = ARGS_STRING(mode);		
-	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,2.0);
+	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,3.0);
 	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,0.0);
 	_mode1Probabilistic = ARGS_BOOL(probabilistic_pv);
 	_mode1Shortest = ARGS_BOOL(shortest_success);
@@ -846,7 +846,7 @@ void Actor::act_callback()
 					if (stepsCount)
 						steps /= stepsCount;
 				}
-				EVAL(steps);
+				// EVAL(steps);
 				if (steps > 0.0)
 				{
 					std::map<std::size_t, double> actionsCount;
@@ -910,8 +910,8 @@ void Actor::act_callback()
 						norm += p.second;	
 					for (auto& p : actionsPV)
 						actionsPV[p.first] /= norm;							
-					EVAL(actionsPV);
-					EVAL(actionsCount);				
+					// EVAL(actionsPV);
+					// EVAL(actionsCount);				
 				}
 				if (steps > 0.0)
 				{
@@ -952,7 +952,7 @@ void Actor::act_callback()
 			if (ok)
 			{
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
-				LOG activeA.name << " " << _mode << "\trequest: " << _turn_request << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
+				LOG activeA.name << "\t" << _mode << "\trequest: " << _turn_request << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
 			}
 		}		
 	}
