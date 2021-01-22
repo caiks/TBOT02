@@ -143,11 +143,11 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
 	_mode = ARGS_STRING(mode);		
-	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,1.0);
-	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,1.0);
+	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,2.0);
+	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,0.0);
 	_mode1Probabilistic = ARGS_BOOL(probabilistic_pv);
-	_mode1Shortest = ARGS_BOOL_DEF(shortest_success,false);
-	_mode1ExpectedPV = ARGS_BOOL_DEF(expected_pv,false);
+	_mode1Shortest = ARGS_BOOL(shortest_success);
+	_mode1ExpectedPV = ARGS_BOOL(expected_pv);
 	_mode1Repulsive = ARGS_BOOL_DEF(repulsive,true);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
