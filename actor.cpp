@@ -133,16 +133,19 @@ Actor::Actor(const std::string& args_filename)
 	_induceThreadCount = ARGS_INT_DEF(induceThreadCount,4);
 	_level1Count = ARGS_INT_DEF(level1Count,12);
 	bool level1Logging = ARGS_BOOL(logging_level1);
+	bool level1Summary = ARGS_BOOL(summary_level1);
 	std::size_t activeSizeLevel1 = ARGS_INT_DEF(activeSizeLevel1,10000);
 	std::size_t induceThresholdLevel1 = ARGS_INT_DEF(induceThresholdLevel1,100);
 	std::size_t induceThresholdInitialLevel1 = ARGS_INT_DEF(induceThresholdInitialLevel1,500);
 	std::chrono::milliseconds induceIntervalLevel1 = (std::chrono::milliseconds)(ARGS_INT_DEF(induceIntervalLevel1,10));
 	bool level2Logging = ARGS_BOOL(logging_level2);
+	bool level2Summary = ARGS_BOOL(summary_level2);
 	std::size_t activeSize = ARGS_INT_DEF(activeSize,1000000);
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
-	_mode = ARGS_STRING(mode);		
+	_mode = ARGS_STRING(mode);	
+	_modeLogging = ARGS_BOOL(mode_logging);	
 	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,3.0);
 	_mode1Turnaway = ARGS_DOUBLE_DEF(turn_away_probability,0.0);
 	_mode1Probabilistic = ARGS_BOOL(probabilistic_pv);
@@ -275,6 +278,7 @@ Actor::Actor(const std::string& args_filename)
 			}
 			activeA.name = (_model!="" ? _model : "model") + "_1_" + (m<10 ? "0" : "") + std::to_string(m);			
 			activeA.logging = level1Logging;
+			activeA.summary = level1Summary;
 			activeA.underlyingEventsRepa.push_back(_events);
 			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 			std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
@@ -370,6 +374,7 @@ Actor::Actor(const std::string& args_filename)
 			}
 			activeA.name = (_model!="" ? _model : "model") + "_2";
 			activeA.logging = level2Logging;
+			activeA.summary = level2Summary;
 			activeA.underlyingEventsRepa.push_back(_events);
 			for (std::size_t m = 0; m < _level1Count; m++)
 			{
@@ -949,7 +954,7 @@ void Actor::act_callback()
 					}					
 				}
 			}
-			if (ok)
+			if (ok && _modeLogging)
 			{
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
 				LOG activeA.name << "\t" << _mode << "\trequest: " << _turn_request << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								

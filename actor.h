@@ -56,6 +56,7 @@ public:
 	std::shared_ptr<Alignment::System> _uu;
 	std::shared_ptr<Alignment::SystemRepa> _ur;
 	
+	bool _modeLogging;	
 	double _mode1DiscountRate;	
 	double _mode1Turnaway;	
 	bool _mode1Probabilistic;	
