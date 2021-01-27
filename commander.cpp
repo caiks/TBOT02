@@ -16,7 +16,7 @@ using namespace std::chrono_literals;
 typedef std::chrono::duration<double> sec;
 typedef std::chrono::high_resolution_clock clk;
 
-Commander::Commander(const std::string& room_initial, std::chrono::milliseconds command_interval, std::size_t room_seed)
+Commander::Commander(const std::string& room_initial, std::chrono::milliseconds command_interval, std::size_t room_seed, std::size_t running)
 : Node("TBOT02_commander_node")
 {
 	srand(room_seed);
@@ -28,6 +28,7 @@ Commander::Commander(const std::string& room_initial, std::chrono::milliseconds 
 			_room = i;
 		
 	_counts.push_back(0);
+	_running = running;
 			
 	_pose_updated = false;
 	_scan_updated = false;
@@ -89,18 +90,32 @@ void Commander::command_callback()
 		if ((size_t)u == _room)
 		{
 			auto n = _counts.size();
-			EVAL(n);
+			// EVAL(n);
 			double mean = 0.0;
 			for (auto a : _counts)
 				mean += a;
 			mean /= n;
-			EVAL(mean);
+			// EVAL(mean);
 			double variance = 0.0;
 			for (auto a : _counts)
 				variance += ((double)a - mean)*((double)a - mean);
 			variance /= n;
-			EVAL(sqrt(variance));		
-			EVAL(sqrt(variance/n));			
+			// EVAL(sqrt(variance));		
+			// EVAL(sqrt(variance/n));					
+			auto running_n = std::min(n,_running);
+			double running_mean = mean;
+			double running_variance = variance;
+			if (running_n < n)
+			{
+				running_mean = 0.0;
+				for (std::size_t i = n - running_n; i < n; i++)
+					running_mean += _counts[i];
+				running_mean /= running_n;
+				running_variance = 0.0;
+				for (std::size_t i = n - running_n; i < n; i++)
+					running_variance += ((double)_counts[i] - running_mean)*((double)_counts[i] - running_mean);
+				running_variance /= running_n;
+			}			
 			_counts.push_back(0);
 			while ((size_t)u == _room)
 				_room = (rand() % 6) + 5; 
@@ -110,7 +125,10 @@ void Commander::command_callback()
 			msg.data = _locations[_room];
 			_goal_pub->publish(msg);
 			std::ostringstream str; 
-			str << "Published goal: " << msg.data;
+			str << "goal: " << msg.data 
+				<< "\tn: " << n << "\tmean: " << mean << "\tstd dev: " << sqrt(variance) << "\tstd err: " << sqrt(variance/n);
+			str << "\trunning mean: " << running_mean << "\trunning std dev: " << sqrt(running_variance) << "\trunning std err: " << sqrt(running_variance/running_n);
+			
 			RCLCPP_INFO(this->get_logger(), str.str());
 		}
 		_counts.back()++;
@@ -122,9 +140,10 @@ int main(int argc, char** argv)
 	std::string room_initial(argc >= 2 ? std::string(argv[1]) : "room1");
 	std::chrono::milliseconds command_interval(argc >= 3 ? std::atol(argv[2]) : 250);
 	std::size_t room_seed(argc >= 4 ? std::atoi(argv[3]) : 17);
+	std::size_t running(argc >= 5 ? std::atoi(argv[4]) : 10);
 
 	rclcpp::init(argc, argv);
-	rclcpp::spin(std::make_shared<Commander>(room_initial, command_interval, room_seed));
+	rclcpp::spin(std::make_shared<Commander>(room_initial, command_interval, room_seed, running));
 	rclcpp::shutdown();
 
 	return 0;

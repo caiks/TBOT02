@@ -152,6 +152,7 @@ Actor::Actor(const std::string& args_filename)
 	_mode1Shortest = ARGS_BOOL(shortest_success);
 	_mode1ExpectedPV = ARGS_BOOL(expected_pv);
 	_mode1Repulsive = ARGS_BOOL_DEF(repulsive,true);
+	_mode1GuessLocation = ARGS_BOOL_DEF(guess_location,true);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -760,21 +761,6 @@ void Actor::act_callback()
 			std::size_t sliceA = ok ? activeA.historySparse->arr[historyEventA] : 0;
 			SizeSet setEventA = ok ? activeA.historySlicesSetEvent[sliceA] : SizeSet();
 			std::shared_ptr<HistoryRepa> hr = ok ? activeA.underlyingHistoryRepa.front() : 0;
-			// if (ok)
-			// {
-				// Variable motor("motor");
-				// Variable location("location");
-				// Variable room_next("room_next");
-				// Histogram histogramA;
-				// SizeList ev(setEventA.begin(),setEventA.end());
-				// histogramA = *trim(*hraa(*_uu, *_ur, *hrsel(ev.size(), ev.data(), *hr)));
-				// // EVAL(size(histogramA))
-				// // EVAL(histogramA);
-				// EVAL(*ared(histogramA, VarUSet{location}));
-				// // EVAL(*ared(histogramA, VarUSet{motor}));
-				// // EVAL(_goal);
-				// // EVAL(_goal_location_goal[_goal]);				
-			// }
 			// now calculate the present value for each motor value
 			if (ok)
 			{
@@ -798,6 +784,29 @@ void Actor::act_callback()
 				auto y = historyEventA;
 				auto rr = hr->arr;	
 				double	steps = 0.0;
+				if (_mode1GuessLocation)
+				{
+					std::map<std::size_t, std::size_t> locationsCurr;
+					for (auto ev : setEventA)
+						locationsCurr[rr[ev*n+location]]++;
+					std::size_t locationMax = 0;
+					std::size_t locationCount = 0;
+					for (auto& p : locationsCurr)
+					{
+						if (locationCount < p.second)
+						{
+							locationCount = p.second;
+							locationMax = p.first;
+						}
+					}
+					// EVAL(locations[locationMax]);
+					// EVAL(locationsGoal[locations[locationMax]]);
+					SizeSet setEventB;
+					for (auto ev : setEventA)
+						if (rr[ev*n+location] == locationMax)
+							setEventB.insert(ev);
+					setEventA = setEventB;
+				}
 				if (_mode1Shortest)
 				{
 					std::size_t shortest = 0;
@@ -898,8 +907,6 @@ void Actor::act_callback()
 						{
 							actionsCount[turn_left] += _mode1Turnaway * 0.5;
 							actionsPV[turn_left] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
-							// actionsCount[ahead] += 1.0 - _mode1Turnaway;
-							// actionsPV[ahead] += (1.0 - _mode1Turnaway)*std::exp(-1.0 * discount * (j-ev));
 							actionsCount[turn_right] += _mode1Turnaway * 0.5;
 							actionsPV[turn_right] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
 						}
@@ -940,7 +947,7 @@ void Actor::act_callback()
 						if (actionsPV[turn_left] > actionsPV[ahead] && actionsPV[turn_left] > actionsPV[turn_right])
 							action = turn_left;
 						else if (actionsPV[turn_right] > actionsPV[ahead] && actionsPV[turn_right] > actionsPV[turn_left])
-							action = turn_right;						
+							action = turn_right;	
 					}	
 					if (action == turn_left)
 					{
