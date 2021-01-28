@@ -505,6 +505,7 @@ Actor::~Actor()
 			{
 				ActiveIOParameters ppio;
 				ppio.filename = activeA.name+".ac";
+				activeA.logging = true;
 				activeA.dump(ppio);		
 			}			
 		}	
@@ -893,17 +894,17 @@ void Actor::act_callback()
 							actionsCount[action] += 1.0;
 							actionsPV[action] += std::exp(-1.0 * discount * (j-ev));
 						}
-						else if (action == turn_left)
+						else if (_mode1Repulsive && action == turn_left)
 						{
 							actionsCount[turn_right] += 1.0;
 							actionsPV[turn_right] += std::exp(-1.0 * discount * (j-ev));
 						}
-						else if (action == turn_right)
+						else if (_mode1Repulsive && action == turn_right)
 						{
 							actionsCount[turn_left] += 1.0;
 							actionsPV[turn_left] += std::exp(-1.0 * discount * (j-ev));
 						}
-						else
+						else if (_mode1Repulsive)
 						{
 							actionsCount[turn_left] += _mode1Turnaway * 0.5;
 							actionsPV[turn_left] += _mode1Turnaway * 0.5 * std::exp(-1.0 * discount * (j-ev));
