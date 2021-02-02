@@ -64,6 +64,7 @@ public:
 	bool _mode1ExpectedPV;	
 	bool _mode1Repulsive;	
 	bool _mode1GuessLocation;	
+	bool _mode2Probabilistic;	
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;

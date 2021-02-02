@@ -153,6 +153,7 @@ Actor::Actor(const std::string& args_filename)
 	_mode1ExpectedPV = ARGS_BOOL(expected_pv);
 	_mode1Repulsive = ARGS_BOOL_DEF(repulsive,true);
 	_mode1GuessLocation = ARGS_BOOL_DEF(guess_location,true);
+	_mode2Probabilistic = ARGS_BOOL(probabilistic);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -969,6 +970,163 @@ void Actor::act_callback()
 			}
 		}		
 	}
+	else if (_struct=="struct001" && _mode=="mode002")
+	{		
+		bool ok = true;		
+		auto& activeA = *_level2.front();
+		if (!activeA.terminate)	
+		{			
+			auto mark = clk::now();
+			std::lock_guard<std::mutex> guard(activeA.mutex);
+			ok = ok && (activeA.historyOverflow	|| activeA.historyEvent);
+			if (ok)
+			{
+				auto historyEventA = activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historySize - 1;
+				auto sliceA = activeA.historySparse->arr[historyEventA];
+				auto setEventA = activeA.historySlicesSetEvent[sliceA];
+				std::shared_ptr<HistoryRepa> hr = activeA.underlyingHistoryRepa.front();
+				auto& hs = *activeA.historySparse;
+				std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
+				std::map<std::string,std::size_t> locationsInt;
+				for (std::size_t i = 0; i < locations.size(); i++)
+					locationsInt[locations[i]] = i;	
+				std::size_t goal = locationsInt[_goal];
+				const char turn_left = 0;
+				const char ahead = 1;
+				const char turn_right = 2;
+				auto over = activeA.historyOverflow;
+				auto& mm = _ur->mapVarSize();
+				auto& mvv = hr->mapVarInt();
+				auto motor = mvv[mm[Variable("motor")]];
+				auto location = mvv[mm[Variable("location")]];
+				auto n = hr->dimension;
+				auto z = hr->size;
+				auto y = historyEventA;
+				auto rr = hr->arr;	
+				auto rs = hs.arr;	
+				std::unordered_map<std::size_t, SizeSet> slicesSliceSetPrev;
+				slicesSliceSetPrev.reserve(activeA.historySlicesSetEvent.size());
+				std::unordered_map<std::size_t, std::size_t> slicesGoalCount;
+				slicesGoalCount.reserve(activeA.historySlicesSetEvent.size());
+				SizeSet sliceSetNext;
+				{
+					auto j = over ? y : z;	
+					auto sliceB = rs[j%z];
+					if (rr[(j%z)*n+location] == goal)
+						slicesGoalCount[sliceB]++;
+					j++;
+					while (j < y+z)
+					{
+						auto sliceC = rs[j%z];
+						if (rr[(j%z)*n+location] == goal)
+							slicesGoalCount[sliceC]++;
+						if (sliceC != sliceB)
+						{
+							slicesSliceSetPrev[sliceC].insert(sliceB);
+							if (sliceB == sliceA)
+								sliceSetNext.insert(sliceC);
+							sliceB = sliceC;
+						}
+						j++;
+					}					
+				}
+				std::unordered_map<std::size_t, std::size_t> slicesStepCount;
+				slicesStepCount.reserve(activeA.historySlicesSetEvent.size());
+				SizeUSet sliceCurrents;
+				sliceCurrents.reserve(activeA.historySlicesSetEvent.size());			
+				for (auto& p : slicesGoalCount)
+				{
+					if (p.second > activeA.historySlicesSetEvent[p.first].size() / 2)
+					{
+						slicesStepCount.insert_or_assign(p.first,0);
+						sliceCurrents.insert(p.first);
+					}
+				}
+				while (sliceCurrents.size())
+				{
+					SizeList sliceCurrentBs;
+					sliceCurrentBs.reserve(activeA.historySlicesSetEvent.size());
+					for (auto sliceB : sliceCurrents)		
+					{
+						auto countC = slicesStepCount[sliceB] + 1;
+						auto it = slicesSliceSetPrev.find(sliceB);
+						if (it != slicesSliceSetPrev.end())
+						{
+							for (auto sliceC : it->second)
+							{							
+								auto it2 = slicesStepCount.find(sliceC);
+								if (it2 == slicesStepCount.end())
+								{
+									slicesStepCount.insert_or_assign(sliceC, countC);
+									sliceCurrentBs.push_back(sliceC);
+								}															
+							}
+						}
+					}
+					sliceCurrents.clear();
+					sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
+				}
+				std::map<std::size_t, std::size_t> actionsCount;
+				{
+					std::size_t least = 0;
+					for (auto sliceB : sliceSetNext)
+						least = least ? std::min(least,slicesStepCount[sliceB]) : slicesStepCount[sliceB];
+					EVAL(least);
+					for (auto sliceB : sliceSetNext)
+						if (least && slicesStepCount[sliceB] == least)
+						{
+							for (auto ev : activeA.historySlicesSetEvent[sliceB])
+								actionsCount[rr[ev*n+motor]]++;
+						}
+					EVAL(actionsCount);
+				}
+				if (actionsCount.size())
+				{
+					char action = ahead;
+					if (_mode2Probabilistic)
+					{
+						std::size_t total = 0;
+						for (auto& p : actionsCount)	
+							total += p.second;
+						auto r = rand() % total;
+						std::size_t accum = 0.0;
+						for (auto& p : actionsCount)
+						{
+							accum += p.second;
+							if (r < accum)
+							{
+								action = p.first;
+								break;
+							}
+						}						
+					}
+					else
+					{
+						if (actionsCount[turn_left] > actionsCount[ahead] && actionsCount[turn_left] > actionsCount[turn_right])
+							action = turn_left;
+						else if (actionsCount[turn_right] > actionsCount[ahead] && actionsCount[turn_right] > actionsCount[turn_left])
+							action = turn_right;	
+					}	
+					if (action == turn_left)
+					{
+						_turn_request = "left";
+						_bias_right = false;
+					}
+					else if (action == turn_right)
+					{
+						_turn_request = "right";
+						_bias_right = true;
+					}					
+				}
+			}
+			if (ok && _modeLogging)
+			{
+				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
+				LOG activeA.name << "\t" << _mode << "\trequest: " << _turn_request << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
+			}
+		}		
+	}
+
 }
 
 void Actor::goal_callback(const std_msgs::msg::String::SharedPtr msg)
