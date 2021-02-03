@@ -1040,10 +1040,9 @@ void Actor::act_callback()
 						auto locC = rr[(j%z)*n+location];
 						if (sliceC != sliceB)
 						{
-							if (slicesLocation[sliceC] == locC)
+							if (slicesLocation[sliceB] == locB && slicesLocation[sliceC] == locC)
 							{
-								if (slicesLocation[sliceB] == locB)
-									slicesSliceSetPrev[sliceC].insert(sliceB);
+								slicesSliceSetPrev[sliceC].insert(sliceB);
 								if (sliceB == sliceA)
 									slicesEventSetNext[sliceC].insert(eventB);
 							}
@@ -1108,7 +1107,7 @@ void Actor::act_callback()
 						if (it != slicesStepCount.end())
 							least = least ? std::min(least,it->second) : it->second;
 					}
-					EVAL(least);
+					// EVAL(least);
 					for (auto& p : slicesEventSetNext)
 					{
 						auto it = slicesStepCount.find(p.first);
