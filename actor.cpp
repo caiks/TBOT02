@@ -1068,6 +1068,18 @@ void Actor::act_callback()
 					sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
 				}
 				// EVAL(slicesStepCount);
+				EVAL(sliceA);
+				{
+					std::map<std::string, std::size_t> locsCount;
+					auto j = over ? y : z;	
+					while (j < y+z)
+					{
+						if (rs[j%z] == sliceA)
+							locsCount[locations[rr[(j%z)*n+location]]]++;
+						j++;
+					}	
+					EVAL(locsCount);
+				}
 				std::map<std::size_t, std::size_t> actionsCount;
 				{
 					std::size_t least = 0;
@@ -1083,6 +1095,39 @@ void Actor::act_callback()
 						auto it = slicesStepCount.find(p.first);
 						if (least && it != slicesStepCount.end() && least == it->second)
 						{
+							EVAL(p.first);
+							EVAL(slicesStepCount[p.first]);
+							{
+								std::map<std::string, std::size_t> locsCount;
+								auto j = over ? y : z;	
+								while (j < y+z)
+								{
+									if (rs[j%z] == p.first)
+										locsCount[locations[rr[(j%z)*n+location]]]++;
+									j++;
+								}	
+								EVAL(locsCount);
+							}
+							for (auto& q : slicesSliceSetPrev)
+							{
+								for (auto& sliceB : q.second)		
+									if (sliceB == p.first && slicesStepCount[q.first] == 0)
+									{
+										EVAL(q.first);
+										// EVAL(slicesGoalCount[q.first] > activeA.historySlicesSetEvent[q.first].size() / 2);
+										{
+											std::map<std::string, std::size_t> locsCount;
+											auto j = over ? y : z;	
+											while (j < y+z)
+											{
+												if (rs[j%z] == q.first)
+													locsCount[locations[rr[(j%z)*n+location]]]++;
+												j++;
+											}	
+											EVAL(locsCount);
+										}
+									}
+							}
 							for (auto ev : p.second)
 								actionsCount[rr[ev*n+motor]]++;
 						}
