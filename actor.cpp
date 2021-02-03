@@ -1003,54 +1003,73 @@ void Actor::act_callback()
 				auto z = hr->size;
 				auto y = historyEventA;
 				auto rr = hr->arr;	
-				auto rs = hs.arr;	
+				auto rs = hs.arr;
+				auto sliceCount = activeA.historySlicesSetEvent.size();
+				std::unordered_map<std::size_t, std::size_t> slicesLocation;
+				slicesLocation.reserve(sliceCount);				
+				{
+					for (auto& p : activeA.historySlicesSetEvent)
+					{
+						std::map<std::size_t, std::size_t> locsCount;
+						for (auto ev : p.second)
+							locsCount[rr[ev*n+location]]++;
+						std::size_t most = 0;
+						std::size_t loc = 0;
+						for (auto& q : locsCount)	
+							if (!most || most < q.second)
+							{
+								most = q.second;
+								loc = q.first;
+							}
+						slicesLocation.insert_or_assign(p.first,loc);
+					}
+				}
 				std::unordered_map<std::size_t, SizeSet> slicesSliceSetPrev;
-				slicesSliceSetPrev.reserve(activeA.historySlicesSetEvent.size());
-				std::unordered_map<std::size_t, std::size_t> slicesGoalCount;
-				slicesGoalCount.reserve(activeA.historySlicesSetEvent.size());
+				slicesSliceSetPrev.reserve(sliceCount);
 				std::unordered_map<std::size_t, SizeSet> slicesEventSetNext;
-				slicesEventSetNext.reserve(activeA.historySlicesSetEvent.size());
+				slicesEventSetNext.reserve(sliceCount);
 				{
 					auto j = over ? y : z;	
 					auto eventB = j%z;
 					auto sliceB = rs[j%z];
-					if (rr[(j%z)*n+location] == goal)
-						slicesGoalCount[sliceB]++;
+					auto locB = rr[(j%z)*n+location];
 					j++;
 					while (j < y+z)
 					{
 						auto sliceC = rs[j%z];
-						if (rr[(j%z)*n+location] == goal)
-							slicesGoalCount[sliceC]++;
+						auto locC = rr[(j%z)*n+location];
 						if (sliceC != sliceB)
 						{
-							slicesSliceSetPrev[sliceC].insert(sliceB);
-							if (sliceB == sliceA)
-								slicesEventSetNext[sliceC].insert(eventB);
+							if (slicesLocation[sliceC] == locC)
+							{
+								if (slicesLocation[sliceB] == locB)
+									slicesSliceSetPrev[sliceC].insert(sliceB);
+								if (sliceB == sliceA)
+									slicesEventSetNext[sliceC].insert(eventB);
+							}
 							sliceB = sliceC;
+							locB = locC;
 							eventB = j%z;
 						}
 						j++;
 					}					
 				}
 				std::unordered_map<std::size_t, std::size_t> slicesStepCount;
-				slicesStepCount.reserve(activeA.historySlicesSetEvent.size());
+				slicesStepCount.reserve(sliceCount);
 				SizeUSet sliceCurrents;
-				sliceCurrents.reserve(activeA.historySlicesSetEvent.size());			
-				for (auto& p : slicesGoalCount)
-				{
-					if (p.second > activeA.historySlicesSetEvent[p.first].size() / 2)
+				sliceCurrents.reserve(sliceCount);			
+				for (auto& p : slicesLocation)
+					if (p.second == goal)
 					{
 						slicesStepCount.insert_or_assign(p.first,0);
 						sliceCurrents.insert(p.first);
 					}
-				}
 				// EVAL(sliceCurrents.size());
-				// EVAL(activeA.historySlicesSetEvent.size());
+				// EVAL(sliceCount);
 				while (sliceCurrents.size())
 				{
 					SizeList sliceCurrentBs;
-					sliceCurrentBs.reserve(activeA.historySlicesSetEvent.size());
+					sliceCurrentBs.reserve(sliceCount);
 					for (auto sliceB : sliceCurrents)		
 					{
 						auto countC = slicesStepCount[sliceB] + 1;
@@ -1068,18 +1087,18 @@ void Actor::act_callback()
 					sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
 				}
 				// EVAL(slicesStepCount);
-				EVAL(sliceA);
-				{
-					std::map<std::string, std::size_t> locsCount;
-					auto j = over ? y : z;	
-					while (j < y+z)
-					{
-						if (rs[j%z] == sliceA)
-							locsCount[locations[rr[(j%z)*n+location]]]++;
-						j++;
-					}	
-					EVAL(locsCount);
-				}
+				// EVAL(sliceA);
+				// {
+					// std::map<std::string, std::size_t> locsCount;
+					// auto j = over ? y : z;	
+					// while (j < y+z)
+					// {
+						// if (rs[j%z] == sliceA)
+							// locsCount[locations[rr[(j%z)*n+location]]]++;
+						// j++;
+					// }	
+					// EVAL(locsCount);
+				// }
 				std::map<std::size_t, std::size_t> actionsCount;
 				{
 					std::size_t least = 0;
@@ -1095,38 +1114,40 @@ void Actor::act_callback()
 						auto it = slicesStepCount.find(p.first);
 						if (least && it != slicesStepCount.end() && least == it->second)
 						{
-							EVAL(p.first);
-							EVAL(slicesStepCount[p.first]);
 							{
-								std::map<std::string, std::size_t> locsCount;
-								auto j = over ? y : z;	
-								while (j < y+z)
-								{
-									if (rs[j%z] == p.first)
-										locsCount[locations[rr[(j%z)*n+location]]]++;
-									j++;
-								}	
-								EVAL(locsCount);
-							}
-							for (auto& q : slicesSliceSetPrev)
-							{
-								for (auto& sliceB : q.second)		
-									if (sliceB == p.first && slicesStepCount[q.first] == 0)
-									{
-										EVAL(q.first);
-										// EVAL(slicesGoalCount[q.first] > activeA.historySlicesSetEvent[q.first].size() / 2);
-										{
-											std::map<std::string, std::size_t> locsCount;
-											auto j = over ? y : z;	
-											while (j < y+z)
-											{
-												if (rs[j%z] == q.first)
-													locsCount[locations[rr[(j%z)*n+location]]]++;
-												j++;
-											}	
-											EVAL(locsCount);
-										}
-									}
+							// EVAL(p.first);
+							// EVAL(slicesStepCount[p.first]);
+							// {
+								// std::map<std::string, std::size_t> locsCount;
+								// auto j = over ? y : z;	
+								// while (j < y+z)
+								// {
+									// if (rs[j%z] == p.first)
+										// locsCount[locations[rr[(j%z)*n+location]]]++;
+									// j++;
+								// }	
+								// EVAL(locsCount);
+							// }
+							// for (auto& q : slicesSliceSetPrev)
+							// {
+								// for (auto& sliceB : q.second)		
+									// if (sliceB == p.first && slicesStepCount[q.first] == 0)
+									// {
+										// EVAL(q.first);
+										// // EVAL(slicesGoalCount[q.first] > activeA.historySlicesSetEvent[q.first].size() / 2);
+										// {
+											// std::map<std::string, std::size_t> locsCount;
+											// auto j = over ? y : z;	
+											// while (j < y+z)
+											// {
+												// if (rs[j%z] == q.first)
+													// locsCount[locations[rr[(j%z)*n+location]]]++;
+												// j++;
+											// }	
+											// EVAL(locsCount);
+										// }
+									// }
+							// }								
 							}
 							for (auto ev : p.second)
 								actionsCount[rr[ev*n+motor]]++;
