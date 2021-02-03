@@ -1012,7 +1012,7 @@ void Actor::act_callback()
 				slicesEventSetNext.reserve(activeA.historySlicesSetEvent.size());
 				{
 					auto j = over ? y : z;	
-					auto eventB = j;
+					auto eventB = j%z;
 					auto sliceB = rs[j%z];
 					if (rr[(j%z)*n+location] == goal)
 						slicesGoalCount[sliceB]++;
@@ -1028,7 +1028,7 @@ void Actor::act_callback()
 							if (sliceB == sliceA)
 								slicesEventSetNext[sliceC].insert(eventB);
 							sliceB = sliceC;
-							eventB = j;
+							eventB = j%z;
 						}
 						j++;
 					}					
@@ -1077,7 +1077,7 @@ void Actor::act_callback()
 						if (it != slicesStepCount.end())
 							least = least ? std::min(least,it->second) : it->second;
 					}
-					// EVAL(least);
+					EVAL(least);
 					for (auto& p : slicesEventSetNext)
 					{
 						auto it = slicesStepCount.find(p.first);
