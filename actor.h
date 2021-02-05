@@ -48,6 +48,7 @@ public:
 	std::vector<std::shared_ptr<Alignment::Active>> _level1;
 	std::size_t _level1Count;
 	std::vector<std::shared_ptr<Alignment::Active>> _level2;
+	std::vector<std::shared_ptr<Alignment::Active>> _level3;
 	Alignment::ActiveUpdateParameters _updateParameters;
 	Alignment::ActiveInduceParameters _induceParametersLevel1;
 	Alignment::ActiveInduceParameters _induceParameters;

@@ -130,6 +130,7 @@ Actor::Actor(const std::string& args_filename)
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
 	std::string modelInitial = ARGS_STRING(model_initial);
+	std::string structInitial = ARGS_STRING(structure_initial);
 	_induceThreadCount = ARGS_INT_DEF(induceThreadCount,4);
 	_level1Count = ARGS_INT_DEF(level1Count,12);
 	bool level1Logging = ARGS_BOOL(logging_level1);
@@ -144,6 +145,8 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
+	bool level3Logging = ARGS_BOOL(logging_level3);
+	bool level3Summary = ARGS_BOOL(summary_level3);
 	_mode = ARGS_STRING(mode);	
 	_modeLogging = ARGS_BOOL(mode_logging);	
 	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,3.0);
@@ -186,7 +189,7 @@ Actor::Actor(const std::string& args_filename)
 	EVAL(_model);
 	EVAL(_mode);
 	
-	if (_struct=="struct001")
+	if (_struct=="struct001" || _struct=="struct002")
 	{
 		std::unique_ptr<HistoryRepa> hr;
 		{
@@ -289,10 +292,9 @@ Actor::Actor(const std::string& args_filename)
 				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
 			}
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
-		}
-	
-		_level2.push_back(std::make_shared<Active>());
+		}	
 		{
+			_level2.push_back(std::make_shared<Active>());
 			auto& activeA = *_level2.front();
 			activeA.log = actor_log;
 			activeA.system = _system;
@@ -360,7 +362,6 @@ Actor::Actor(const std::string& args_filename)
 				}
 				for (std::size_t m = 0; m < _level1Count; m++)
 				{
-					auto& activeB = *_level1[m];
 					activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
 				}
 				{
@@ -390,6 +391,131 @@ Actor::Actor(const std::string& args_filename)
 				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
 			}			
 			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
+		}
+		if (_struct=="struct002")
+		{
+			std::vector<SizeList> under 
+			{
+				SizeList{0,1,3,6,10,15,21,28,36}, 
+				SizeList{0,1,3}, 
+				SizeList{0,1,3,6,10}, 
+				SizeList{0,1,3,6,10,15,21,28,36}, 
+				SizeList{0,2,4,8,16,32}, 
+				SizeList{0,2,4,8,16,32}
+			};
+			std::vector<SizeList> self 
+			{
+				SizeList{}, 
+				SizeList{6,10,15}, 
+				SizeList{16,32,64}, 
+				SizeList{4,8,16,32,64}, 
+				SizeList{}, 
+				SizeList{16,32,64}
+			};			
+			for (std::size_t m = 0; m < under.size(); m++)
+			{
+				_level3.push_back(std::make_shared<Active>());
+				auto& activeA = *_level3.back();
+				activeA.log = actor_log;
+				activeA.system = _system;
+				if (modelInitial.size() && structInitial != "struct001")
+				{
+					ActiveIOParameters ppio;
+					ppio.filename = modelInitial + "_3_" + (m<10 ? "0" : "") + std::to_string(m) +".ac";
+					activeA.logging = true;
+					if (!activeA.load(ppio))
+					{
+						RCLCPP_INFO(this->get_logger(), "TBOT02 actor node failed to load model");					
+						_system.reset();
+						return;
+					}								
+					_system->block = std::max(_system->block, activeA.varMax() >> activeA.bits);
+					if (activeA.underlyingEventUpdateds.size())
+						_eventId = std::max(_eventId,*(activeA.underlyingEventUpdateds.rbegin()));					
+					else if (activeA.historyOverflow)
+						_eventId = std::max(_eventId,activeA.historySize);	
+					else					
+						_eventId = std::max(_eventId,activeA.historyEvent);	
+				}
+				else
+				{			
+					activeA.var = activeA.system->next(activeA.bits);
+					activeA.varSlice = activeA.system->next(activeA.bits);
+					activeA.historySize = activeSize;
+					activeA.induceThreshold = induceThreshold;
+					activeA.decomp = std::make_unique<DecompFudSlicedRepa>();
+					{
+						SizeList vv0;
+						{
+							auto& mm = _ur->mapVarSize();
+							vv0.push_back(mm[Variable("motor")]);
+							vv0.push_back(mm[Variable("location")]);
+							for (auto v : vv0)
+								activeA.induceVarExclusions.insert(v);
+						}
+						auto hr1 = std::make_shared<HistoryRepa>();
+						{
+							auto n = hr->dimension;
+							auto vv = hr->vectorVar;
+							auto sh = hr->shape;
+							auto& mvv = hr->mapVarInt();
+							auto n1 = vv0.size();
+							hr1->dimension = n1;
+							hr1->vectorVar = new std::size_t[n1];
+							auto vv1 = hr1->vectorVar;
+							hr1->shape = new std::size_t[n1];
+							auto sh1 = hr1->shape;
+							for (std::size_t i = 0; i < n1; i++)
+							{
+								auto v = vv0[i];
+								vv1[i] = v;
+								sh1[i] = sh[mvv[v]];
+							}
+							hr1->evient = true;
+							hr1->size = activeA.historySize;
+							auto z1 = hr1->size;
+							hr1->arr = new unsigned char[z1*n1];
+							auto rr1 = hr1->arr;
+							// memset(rr1, 0, z1*n1);			
+						}
+						activeA.underlyingHistoryRepa.push_back(hr1);
+					}
+					{
+						activeA.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeA.historySize,1));
+					}
+					{
+						auto hr = std::make_unique<HistorySparseArray>();
+						{
+							auto z = activeA.historySize;
+							hr->size = z;
+							hr->capacity = 1;
+							hr->arr = new std::size_t[z];		
+						}		
+						activeA.historySparse = std::move(hr);			
+					}
+				}
+				activeA.name = (_model!="" ? _model : "model") + "_3_" + (m<10 ? "0" : "") + std::to_string(m);
+				activeA.logging = level3Logging;
+				activeA.summary = level3Summary;
+				activeA.underlyingEventsRepa.push_back(_events);
+				_events->references++;
+				{
+					auto& activeB = *_level2.back();
+					activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
+					activeB.eventsSparse->references++;
+				}
+				activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
+				for (auto i : under[m])
+					activeA.frameUnderlyings.insert(i);
+				for (auto i : under[m])
+					activeA.frameHistorys.insert(i);
+				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
+				if (sizeA)
+				{
+					LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
+				}			
+				_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
+			}			
 		}
 	}
 	
@@ -485,29 +611,39 @@ Actor::Actor(const std::string& args_filename)
 
 Actor::~Actor()
 {
-	if (_system && _struct=="struct001")
+	if (_system && (_struct=="struct001" || _struct=="struct002"))
 	{
-		for (std::size_t m = 0; m < _level1Count; m++)
+		for (auto activeA : _level1)
 		{
-			auto& activeA = *_level1[m];
-			activeA.terminate = true;
+			activeA->terminate = true;
 			if ( _model!="")
 			{
 				ActiveIOParameters ppio;
-				ppio.filename = activeA.name+".ac";
-				activeA.logging = true;
-				activeA.dump(ppio);						
-			}
-		}
+				ppio.filename = activeA->name+".ac";
+				activeA->logging = true;
+				activeA->dump(ppio);		
+			}			
+		}	
+		for (auto activeA : _level2)
 		{
-			auto& activeA = *_level2.front();	
-			activeA.terminate = true;
+			activeA->terminate = true;
 			if ( _model!="")
 			{
 				ActiveIOParameters ppio;
-				ppio.filename = activeA.name+".ac";
-				activeA.logging = true;
-				activeA.dump(ppio);		
+				ppio.filename = activeA->name+".ac";
+				activeA->logging = true;
+				activeA->dump(ppio);		
+			}			
+		}	
+		for (auto activeA : _level3)
+		{
+			activeA->terminate = true;
+			if ( _model!="")
+			{
+				ActiveIOParameters ppio;
+				ppio.filename = activeA->name+".ac";
+				activeA->logging = true;
+				activeA->dump(ppio);		
 			}			
 		}	
 		for (auto& t : _threads)
@@ -717,20 +853,29 @@ void Actor::act_callback()
 	_eventId++;
 	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
 	{		
-		std::vector<std::thread> threadsLevel1;
-		threadsLevel1.reserve(_level1Count);
-		for (std::size_t m = 0; m < _level1Count; m++)
+		std::vector<std::thread> threadsLevel;
+		threadsLevel.reserve(_level1.size());
+		for (auto& activeA  : _level1)
 		{
-			auto& activeA = *_level1[m];
-			threadsLevel1.push_back(std::thread(run_update, std::ref(activeA), _updateParameters));
+			threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
 		}
-		for (auto& t : threadsLevel1)
+		for (auto& t : threadsLevel)
 			t.join();			
 	}
+	for (auto& activeA  : _level2)
 	{
-		auto& activeA = *_level2.front();	
-		if (!activeA.terminate)		
-			activeA.update(_updateParameters);
+		if (!activeA->terminate)		
+			activeA->update(_updateParameters);
+	}
+	{		
+		std::vector<std::thread> threadsLevel;
+		threadsLevel.reserve(_level3.size());
+		for (auto& activeA  : _level3)
+		{
+			threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
+		}
+		for (auto& t : threadsLevel)
+			t.join();			
 	}
 	if (_struct=="struct001" && _mode=="mode001")
 	{		
