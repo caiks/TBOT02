@@ -117,6 +117,7 @@ Actor::Actor(const std::string& args_filename)
 	_update_updated = false;
 	_turn_request = "";
 	_updateLogging = ARGS_BOOL(logging_update);
+	_actLogging = ARGS_BOOL(logging_action);
 	std::chrono::milliseconds updateInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(update_interval,10));
 	std::chrono::milliseconds biasInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(bias_interval,0));
 	std::chrono::milliseconds turnInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(turn_interval,0));
@@ -144,7 +145,7 @@ Actor::Actor(const std::string& args_filename)
 	std::size_t activeSize = ARGS_INT_DEF(activeSize,1000000);
 	std::size_t induceThreshold = ARGS_INT_DEF(induceThreshold,100);
 	std::size_t induceThresholdInitial = ARGS_INT_DEF(induceThresholdInitial,1000);
-	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induceInterval,10));	
+	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induce_interval,10));	
 	bool level3Logging = ARGS_BOOL(logging_level3);
 	bool level3Summary = ARGS_BOOL(summary_level3);
 	_mode = ARGS_STRING(mode);	
@@ -844,39 +845,46 @@ void Actor::act_callback()
 {
 	if (_crashed || !_pose_updated || !_scan_updated || !_update_updated || !_system)
 		return;
-		
-	std::unique_ptr<HistoryRepa> hr;
+	
 	{
-		SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ _record });	
-		hr = std::move(std::get<2>(xx));
-	}
-	_eventId++;
-	_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
-	{		
-		std::vector<std::thread> threadsLevel;
-		threadsLevel.reserve(_level1.size());
-		for (auto& activeA  : _level1)
+		auto mark = clk::now();
+		std::unique_ptr<HistoryRepa> hr;
 		{
-			threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
+			SystemHistoryRepaTuple xx = recordListsHistoryRepa_4(8, RecordList{ _record });	
+			hr = std::move(std::get<2>(xx));
 		}
-		for (auto& t : threadsLevel)
-			t.join();			
-	}
-	for (auto& activeA  : _level2)
-	{
-		if (!activeA->terminate)		
-			activeA->update(_updateParameters);
-	}
-	{		
-		std::vector<std::thread> threadsLevel;
-		threadsLevel.reserve(_level3.size());
-		for (auto& activeA  : _level3)
+		_eventId++;
+		_events->mapIdEvent[_eventId] = HistoryRepaPtrSizePair(std::move(hr),_events->references);			
+		{		
+			std::vector<std::thread> threadsLevel;
+			threadsLevel.reserve(_level1.size());
+			for (auto& activeA  : _level1)
+			{
+				threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
+			}
+			for (auto& t : threadsLevel)
+				t.join();			
+		}
+		for (auto& activeA  : _level2)
 		{
-			threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
+			if (!activeA->terminate)		
+				activeA->update(_updateParameters);
 		}
-		for (auto& t : threadsLevel)
-			t.join();			
-	}
+		{		
+			std::vector<std::thread> threadsLevel;
+			threadsLevel.reserve(_level3.size());
+			for (auto& activeA  : _level3)
+			{
+				threadsLevel.push_back(std::thread(run_update, std::ref(*activeA), _updateParameters));
+			}
+			for (auto& t : threadsLevel)
+				t.join();			
+		}
+		if (_actLogging)
+		{
+			LOG "event id: " << _eventId << "\ttime " << ((sec)(clk::now() - mark)).count() << "s" UNLOG								
+		}		
+	}	
 	if (_struct=="struct001" && _mode=="mode001")
 	{		
 		auto single = histogramSingleton_u;		

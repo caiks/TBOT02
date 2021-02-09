@@ -32,6 +32,7 @@ public:
 	
 	std::string _turn_request;
 	
+	bool _actLogging;
 	std::string _struct;
 	std::string _model;
 	std::size_t _induceThreadCount;
