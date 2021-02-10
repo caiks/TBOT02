@@ -337,7 +337,13 @@ int main(int argc, char **argv)
 		auto drjoin = applicationRepaPairsJoin_u;
 		auto layerer = parametersSystemsLayererMaxRollByMExcludedSelfHighestLogIORepa_up;
 		
-		auto log = [](const std::string& str)
+		auto log = [](Active& active, const std::string& str)
+		{
+			std::cout << str << std::endl;
+			return;
+		};
+		
+		auto layerer_log = [](const std::string& str)
 		{
 			std::cout << str << std::endl;
 			return;
@@ -498,7 +504,7 @@ int main(int argc, char **argv)
 		try
 		{
 
-			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, log, *ur);
+			auto t = layerer(wmax, lmax, xmax, omax, bmax, mmax, umax, pmax, tint, vv, *hr, *hrs, f, layerer_log, *ur);
 			fr = std::move(std::get<0>(t));
 			mm = std::move(std::get<1>(t));
 		}
@@ -2161,7 +2167,7 @@ int main(int argc, char **argv)
 				ev0->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),1);
 			// EVAL(*ev0);	
 
-			auto updatePost = [](const SizeSet& eventsA, std::size_t eventA, std::size_t historyEventA, std::size_t sliceA)
+			auto updatePost = [](Active& active, const SizeSet& eventsA, std::size_t eventA, std::size_t historyEventA, std::size_t sliceA)
 			{
 				std::cout << "eventsA: " << eventsA << std::endl;
 				std::cout << "eventA: " << eventA << std::endl;
@@ -2813,7 +2819,7 @@ int main(int argc, char **argv)
 			ECHO(ok = activeB.update(ActiveUpdateParameters()));
 			TRUTH(ok);
 
-			auto inducePost = [](std::size_t sliceA, std::size_t sliceSizeA)
+			auto inducePost = [](Active& active, std::size_t sliceA, std::size_t sliceSizeA)
 			{
 				std::cout << "sliceA: " << sliceA << std::endl;
 				std::cout << "sliceSizeA: " << sliceSizeA << std::endl;
