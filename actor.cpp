@@ -49,7 +49,7 @@ typedef std::chrono::high_resolution_clock clk;
 
 Actor* actor_this = 0;
 
-void actor_log(const std::string& str)
+void actor_log(Active& active, const std::string& str)
 {
 	if (actor_this)
 	{
@@ -59,6 +59,18 @@ void actor_log(const std::string& str)
 		std::cout << str << std::endl;
 	return;
 };
+
+void layerer_actor_log(const std::string& str)
+{
+	if (actor_this)
+	{
+		RCLCPP_INFO(actor_this->get_logger(), str);
+	}
+	else
+		std::cout << str << std::endl;
+	return;
+};
+		
 		
 void run_induce(Actor& actor, Active& active, std::chrono::milliseconds induceInterval, std::size_t induceThresholdInitial)
 {
@@ -209,6 +221,7 @@ Actor::Actor(const std::string& args_filename)
 		{			
 			auto& activeA = *_level1[m];
 			activeA.log = actor_log;
+			activeA.layerer_log = layerer_actor_log;
 			activeA.system = _system;
 			if (modelInitial.size())
 			{
@@ -298,6 +311,7 @@ Actor::Actor(const std::string& args_filename)
 			_level2.push_back(std::make_shared<Active>());
 			auto& activeA = *_level2.front();
 			activeA.log = actor_log;
+			activeA.layerer_log = layerer_actor_log;
 			activeA.system = _system;
 			if (modelInitial.size())
 			{
@@ -418,6 +432,7 @@ Actor::Actor(const std::string& args_filename)
 				_level3.push_back(std::make_shared<Active>());
 				auto& activeA = *_level3.back();
 				activeA.log = actor_log;
+				activeA.layerer_log = layerer_actor_log;
 				activeA.system = _system;
 				if (modelInitial.size() && structInitial != "struct001")
 				{
