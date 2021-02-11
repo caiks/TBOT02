@@ -14,6 +14,8 @@ class Actor : public rclcpp::Node
 public:
 	Actor(const std::string&);
 	~Actor();
+	
+	bool _terminate;
 
 	TBOT02::Record _record;
 	bool _updateLogging;
@@ -33,6 +35,8 @@ public:
 	std::string _turn_request;
 	
 	bool _actLogging;
+	bool _actWarning;
+	std::chrono::milliseconds _actInterval;
 	std::string _struct;
 	std::string _model;
 	std::size_t _induceThreadCount;
@@ -76,10 +80,8 @@ private:
 	rclcpp::Subscription<std_msgs::msg::String>::SharedPtr _goal_sub;
 
 	rclcpp::TimerBase::SharedPtr _update_timer;
-	rclcpp::TimerBase::SharedPtr _act_timer;
 	
 	void update_callback();
-	void act_callback();
 	void update_cmd_vel(double linear, double angular);
 	void scan_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
 	void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
