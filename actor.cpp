@@ -11,7 +11,7 @@ using namespace std;
 using namespace std::chrono_literals;
 namespace js = rapidjson;
 
-#define EVAL(x) { std::ostringstream str; str << #x << ": " << (x); RCLCPP_INFO(this->get_logger(), str.str());}
+#define EVAL(x) { std::ostringstream str; str << #x << ": " << (x); RCLCPP_INFO(actor_this->get_logger(), str.str());}
 
 #define ARGS_STRING_DEF(x,y) args.HasMember(#x) && args[#x].IsString() ? args[#x].GetString() : y
 #define ARGS_STRING(x) ARGS_STRING_DEF(x,"")
@@ -694,6 +694,7 @@ Actor::Actor(const std::string& args_filename)
 	std::chrono::milliseconds induceInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(induce_interval,10));	
 	bool level3Logging = ARGS_BOOL(logging_level3);
 	bool level3Summary = ARGS_BOOL(summary_level3);
+	bool induceNot = ARGS_BOOL(no_induce);
 	_mode = ARGS_STRING(mode);	
 	_modeLogging = ARGS_BOOL(mode_logging);	
 	_mode1DiscountRate = ARGS_DOUBLE_DEF(discount_rate,3.0);
@@ -731,6 +732,8 @@ Actor::Actor(const std::string& args_filename)
 		_induceParameters.seed = ARGS_INT_DEF(induceParameters.seed,5);		
 	}
 
+	actor_this = this;
+		
 	EVAL(_goal);
 	EVAL(_struct);
 	EVAL(_model);
@@ -746,7 +749,6 @@ Actor::Actor(const std::string& args_filename)
 			hr = std::move(std::get<2>(xx));
 		}
 		_system = std::make_shared<ActiveSystem>();
-		actor_this = this;
 		_threads.reserve(1+_level1Count+1+6);
 		_events = std::make_shared<ActiveEventsRepa>(_level1Count+1);
 		for (std::size_t m = 0; m < _level1Count; m++)
@@ -839,7 +841,8 @@ Actor::Actor(const std::string& args_filename)
 			{
 				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
 			}
-			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
+			if (!induceNot)
+				_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceIntervalLevel1, induceThresholdInitialLevel1));
 		}	
 		{
 			_level2.push_back(std::make_shared<Active>());
@@ -933,13 +936,14 @@ Actor::Actor(const std::string& args_filename)
 				auto& activeB = *_level1[m];
 				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
 			}
-			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(0);	
 			std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
 			if (sizeA)
 			{
 				LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
 			}			
-			_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
+			if (!induceNot)
+				_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
 		}
 		if (_struct=="struct002")
 		{
@@ -1054,7 +1058,7 @@ Actor::Actor(const std::string& args_filename)
 					activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
 					activeB.eventsSparse->references++;
 				}
-				activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
+				// activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
 				for (auto i : under[m])
 					activeA.frameUnderlyings.insert(i);
 				for (auto i : under[m])
@@ -1064,7 +1068,8 @@ Actor::Actor(const std::string& args_filename)
 				{
 					LOG activeA.name << "\tfuds cardinality: " << activeA.decomp->fuds.size() << "\tmodel cardinality: " << activeA.decomp->fudRepasSize << "\tactive size: " << sizeA << "\tfuds per threshold: " << (double)activeA.decomp->fuds.size() * activeA.induceThreshold / sizeA UNLOG				
 				}			
-				_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
+				if (!induceNot)
+					_threads.push_back(std::thread(run_induce, std::ref(*this), std::ref(activeA), induceInterval, induceThresholdInitial));			
 			}			
 		}
 		_threads.push_back(std::thread(run_act, std::ref(*this)));	
