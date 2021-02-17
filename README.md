@@ -1,6 +1,8 @@
 # TBOT02 - TurtleBot3 dynamic controller 
 
-[TurtleBot3](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/) is a [Robot Operating System](https://www.ros.org/about-ros/) standard platform robot. Here we extend the developments in [TBOT01](https://github.com/caiks/TBOT01#readme) to implement dynamic *modelling*. That is, instead of (1) acquiring *history*, (2) *modelling*, and (3) *applying model* in three different stages, all are done concurrently.
+[TurtleBot3](http://emanual.robotis.com/docs/en/platform/turtlebot3/overview/) is a [Robot Operating System](https://www.ros.org/about-ros/) standard platform robot. Here we extend the developments in [TBOT01](https://github.com/caiks/TBOT01#readme) to implement dynamic *modelling*. That is, instead of (1) acquiring *history*, (2) *modelling*, and (3) *applying model* in three different stages, all are done concurrently. 
+
+We will be less concerned with the *likelihood* of the *model*, assuming that it depends mainly on the *induction* parameters and *history size*, and instead we will focus more on the architecture and real-time performance of multiple *models* arranged in *levels* over the *substrate*. We will also pay less attention to particular labels or goals, accepting that *aligned induction modelling* often does not return the label accuracies associated with *conditional modelling* or *artificial neural networks*. We will assume that larger *histories* and *substrates* will at least partially compensate for weaker control or lower target-directedness. Also, goals will move from being defined in terms of the *value* of some *substrate variable* to being defined in terms of a set of *slices* having low label *entropy*. That is, motor actions will be selected that tend to move through a *slice* topology from the current *slice* to some goal *slice*, rather than being chosen to optimise some future goal *variable* by some sort of present value discounting.
 
 ## Sections
 
@@ -37,6 +39,8 @@ git clone https://github.com/caiks/TBOT02_ws.git
 
 cd ~/TBOT02_ws
 cat data009a* >data009.bin
+cat model071_2a* >model071_2.ac
+cat model072_2a* >model072_2.ac
 
 ```
 Then build -
@@ -155,6 +159,8 @@ git clone https://github.com/caiks/TBOT02_ws.git
 
 cd ~/turtlebot3_ws/src/TBOT02_ws
 cat data009a* >data009.bin
+cat model071_2a* >model071_2.ac
+cat model072_2a* >model072_2.ac
 
 cd ~/turtlebot3_ws/src
 mkdir -p AlignmentC_build AlignmentRepaC_build AlignmentActive_build
@@ -1037,5 +1043,17 @@ ros2 run TBOT02 controller data.bin 250 5000 5000
 ros2 run TBOT02 actor 250 room5 struct001 model061 mode001
 
 ```
+This shows the decline in *label entropy* for the *level* 2 *model*,
+
+model|size|label entropy/size
+---|---|---
+61|258,581|0.71099
+65|370,181|0.668522
+69|431,243|0.610491
+67|525,414|0.609749
+66|540,699|0.595765
+63|562,969|0.597108
+68|684,004|0.557499
+70|580,398|0.554539
 
 

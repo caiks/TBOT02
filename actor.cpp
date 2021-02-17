@@ -936,7 +936,8 @@ Actor::Actor(const std::string& args_filename)
 				auto& activeB = *_level1[m];
 				activeA.underlyingEventsSparse.push_back(activeB.eventsSparse);
 			}
-			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(0);	
+			if (_struct=="struct002")
+				activeA.eventsSparse = std::make_shared<ActiveEventsArray>(0);	
 			std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
 			if (sizeA)
 			{
