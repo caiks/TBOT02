@@ -31,6 +31,7 @@ public:
 	bool _bias_right;
 	int _bias_factor;
 	int _turn_factor;
+	int _sec_per_turn;
 	
 	std::string _turn_request;
 	
