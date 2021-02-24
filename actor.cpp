@@ -646,16 +646,17 @@ void run_act(Actor& actor)
 							std::size_t steps = 1;
 							if (actor._mode3SlicesLocation[sliceB] != goal)
 							{
+								bool found = false;
 								SizeSet slicePrevious;	
 								slicePrevious.insert(sliceA);							
 								slicePrevious.insert(sliceB);							
 								SizeSet sliceCurrents;		
 								sliceCurrents.insert(sliceB);
-								while (sliceCurrents.size())
+								while (!found && sliceCurrents.size())
 								{
 									steps++;
-									bool found = false;
-									SizeSet sliceCurrentBs;
+									SizeList sliceCurrentBs;
+									sliceCurrentBs.reserve(sliceCurrents.size() * 20);
 									for (auto sliceC : sliceCurrents)		
 									{
 										for (auto sliceD : actor._mode3SlicesSliceSetNext[sliceC])
@@ -667,7 +668,7 @@ void run_act(Actor& actor)
 													found = true;
 													break;
 												}
-												sliceCurrentBs.insert(sliceD);			
+												sliceCurrentBs.push_back(sliceD);			
 												slicePrevious.insert(sliceD);			
 											}
 										}
@@ -679,9 +680,13 @@ void run_act(Actor& actor)
 									sliceCurrents.clear();
 									sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
 								}
+								if (found)
+									neighbours[sliceB] = steps;
 							}
-							neighbours[sliceB] = steps;
+							else
+								neighbours[sliceB] = steps;
 						}
+						// EVAL(neighbours);
 						std::set<std::size_t> neighbourLeasts;
 						{
 							std::size_t least = 0;
@@ -691,7 +696,9 @@ void run_act(Actor& actor)
 							for (auto& p : neighbours)	
 								if (p.second == least)	
 									neighbourLeasts.insert(p.first);
+							// EVAL(least);
 						}
+						// EVAL(neighbourLeasts);
 						std::map<std::size_t, std::size_t> actionsCount;
 						{
 							for (auto ev : activeA.historySlicesSetEvent[sliceA])
@@ -711,10 +718,11 @@ void run_act(Actor& actor)
 							}
 							
 						}
+						// EVAL(actionsCount);
 						if (actionsCount.size())
 						{
 							char action = ahead;
-							if (actor._mode2Probabilistic)
+							if (actor._mode3Probabilistic)
 							{
 								std::size_t total = 0;
 								for (auto& p : actionsCount)	
@@ -733,9 +741,9 @@ void run_act(Actor& actor)
 							}
 							else
 							{
-								if (actionsCount[turn_left] * actor._sec_per_turn > actionsCount[ahead] && actionsCount[turn_left] > actionsCount[turn_right])
+								if (actionsCount[turn_left] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_left] > actionsCount[turn_right])
 									action = turn_left;
-								else if (actionsCount[turn_right] * actor._sec_per_turn > actionsCount[ahead] && actionsCount[turn_right] > actionsCount[turn_left])
+								else if (actionsCount[turn_right] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_right] > actionsCount[turn_left])
 									action = turn_right;	
 							}	
 							// locking here? TODO
@@ -822,7 +830,7 @@ Actor::Actor(const std::string& args_filename)
 	_turn_factor = turnInterval.count() / updateInterval.count();
 	_eventId = 0;
 	_actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(act_interval,250));
-	_sec_per_turn = turnInterval.count() / _actInterval.count();
+	_acts_per_turn = ARGS_INT_DEF(acts_per_turn,20);
 	_goal = ARGS_STRING_DEF(goal_initial,"room5");
 	_struct = ARGS_STRING_DEF(structure,"struct001");
 	_model = ARGS_STRING(model);
@@ -855,6 +863,8 @@ Actor::Actor(const std::string& args_filename)
 	_mode1Repulsive = ARGS_BOOL_DEF(repulsive,true);
 	_mode1GuessLocation = ARGS_BOOL_DEF(guess_location,true);
 	_mode2Probabilistic = ARGS_BOOL(probabilistic);
+	_mode3Probabilistic = ARGS_BOOL(probabilistic);
+	_mode3MultipleTransition = ARGS_BOOL(multiple_transition);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -1354,7 +1364,7 @@ Actor::Actor(const std::string& args_filename)
 		for (auto& p : slicesSliceSetNext)
 			for (auto& q : p.second)
 			{
-				if (q.second > 1)
+				if (!_mode3MultipleTransition || q.second > 1)
 					_mode3SlicesSliceSetNext[p.first].insert(q.first);
 			}
 	}

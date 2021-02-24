@@ -31,7 +31,7 @@ public:
 	bool _bias_right;
 	int _bias_factor;
 	int _turn_factor;
-	int _sec_per_turn;
+	int _acts_per_turn;
 	
 	std::string _turn_request;
 	
@@ -74,7 +74,8 @@ public:
 	bool _mode2Probabilistic;	
 	std::unordered_map<std::size_t, Alignment::SizeSet> _mode3SlicesSliceSetNext;
 	std::unordered_map<std::size_t, std::size_t> _mode3SlicesLocation;
-
+	bool _mode3Probabilistic;	
+	bool _mode3MultipleTransition;	
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;
