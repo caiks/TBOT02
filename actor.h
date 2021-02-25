@@ -71,11 +71,11 @@ public:
 	bool _mode1ExpectedPV;	
 	bool _mode1Repulsive;	
 	bool _mode1GuessLocation;	
-	bool _mode2Probabilistic;	
+	bool _modeProbabilistic;	
 	std::unordered_map<std::size_t, Alignment::SizeSet> _mode3SlicesSliceSetNext;
 	std::unordered_map<std::size_t, std::size_t> _mode3SlicesLocation;
-	bool _mode3Probabilistic;	
-	bool _mode3MultipleTransition;	
+	bool _modeMultipleTransition;	
+	std::map<Alignment::SizeSizePair, std::set<Alignment::SizeSizePair>> _mode4SlicesSliceSetNext;
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;
