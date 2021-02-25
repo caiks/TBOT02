@@ -800,24 +800,26 @@ void run_act(Actor& actor)
 						auto rr = hr->arr;	
 						auto rs = hs.arr;
 						auto locA = rr[historyEventA*n+location];
-						auto sliceLocA = SizeSizePair(sliceA,locA);
+						auto sliceLocA = sliceA*11+locA;
 						auto sliceCount = activeA.historySlicesSetEvent.size();
-						std::map<SizeSizePair, std::size_t> neighbours;
+						std::map<std::size_t, std::size_t> neighbours;
 						for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
 						{
 							std::size_t steps = 1;
-							if (sliceLocB.second != goal)
+							if (sliceLocB%11 != goal)
 							{
 								bool found = false;
-								std::set<SizeSizePair> slicePrevious;	
+								SizeUSet slicePrevious;	
+								slicePrevious.reserve(sliceCount);
 								slicePrevious.insert(sliceLocA);							
 								slicePrevious.insert(sliceLocB);							
-								std::set<SizeSizePair> sliceCurrents;		
+								SizeUSet sliceCurrents;		
+								sliceCurrents.reserve(sliceCount);
 								sliceCurrents.insert(sliceLocB);
 								while (!found && sliceCurrents.size())
 								{
 									steps++;
-									std::vector<SizeSizePair> sliceCurrentBs;
+									SizeList sliceCurrentBs;
 									sliceCurrentBs.reserve(sliceCurrents.size() * 20);
 									for (auto sliceLocC : sliceCurrents)		
 									{
@@ -825,7 +827,7 @@ void run_act(Actor& actor)
 										{					
 											if (slicePrevious.find(sliceLocD) == slicePrevious.end())
 											{
-												if (sliceLocD.second == goal)
+												if (sliceLocD%11 == goal)
 												{
 													found = true;
 													break;
@@ -849,7 +851,7 @@ void run_act(Actor& actor)
 								neighbours[sliceLocB] = steps;
 						}
 						EVAL(neighbours);
-						std::set<SizeSizePair> neighbourLeasts;
+						std::set<std::size_t> neighbourLeasts;
 						{
 							std::size_t least = 0;
 							for (auto& p : neighbours)	
@@ -872,7 +874,7 @@ void run_act(Actor& actor)
 									auto locB = rr[(j%z)*n+location];
 									if (sliceB != sliceA)
 									{
-										if (neighbourLeasts.find(SizeSizePair(sliceB,locB)) != neighbourLeasts.end())
+										if (neighbourLeasts.find(sliceB*11+locB) != neighbourLeasts.end())
 											actionsCount[rr[ev*n+motor]]++;
 										break;
 									}
@@ -1545,7 +1547,9 @@ Actor::Actor(const std::string& args_filename)
 		auto y = historyEventA;
 		auto rr = hr->arr;	
 		auto rs = hs.arr;
-		std::map<SizeSizePair, std::map<SizeSizePair, std::size_t>> slicesSliceSetNext;
+		auto sliceCount = activeA.historySlicesSetEvent.size();
+		std::unordered_map<std::size_t, std::map<std::size_t, std::size_t>> slicesSliceSetNext;
+		slicesSliceSetNext.reserve(sliceCount*11);
 		{
 			auto j = over ? y : z;	
 			auto sliceB = rs[j%z];
@@ -1557,13 +1561,14 @@ Actor::Actor(const std::string& args_filename)
 				auto locC = rr[(j%z)*n+location];
 				if (sliceC != sliceB)
 				{
-					slicesSliceSetNext[SizeSizePair(sliceB,locB)][SizeSizePair(sliceC,locC)]++;
+					slicesSliceSetNext[sliceB*11+locB][sliceC*11+locC]++;
 					sliceB = sliceC;
 					locB = locC;
 				}
 				j++;
 			}					
 		}
+		_mode4SlicesSliceSetNext.reserve(slicesSliceSetNext.size());
 		for (auto& p : slicesSliceSetNext)
 			for (auto& q : p.second)
 			{
