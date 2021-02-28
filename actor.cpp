@@ -777,14 +777,16 @@ void run_act(Actor& actor)
 					ok = ok && (activeA.historyOverflow	|| activeA.historyEvent);
 					if (ok)
 					{
+						std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
+						auto nloc = locations.size();
+						std::map<std::string,std::size_t> locationsInt;
+						for (std::size_t i = 0; i < locations.size(); i++)
+							locationsInt[locations[i]] = i;	
+
 						auto historyEventA = activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historySize - 1;
 						auto sliceA = activeA.historySparse->arr[historyEventA];
 						std::shared_ptr<HistoryRepa> hr = activeA.underlyingHistoryRepa.front();
 						auto& hs = *activeA.historySparse;
-						std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
-						std::map<std::string,std::size_t> locationsInt;
-						for (std::size_t i = 0; i < locations.size(); i++)
-							locationsInt[locations[i]] = i;	
 						std::size_t goal = locationsInt[actor._goal];
 						const char turn_left = 0;
 						const char ahead = 1;
@@ -800,69 +802,86 @@ void run_act(Actor& actor)
 						auto rr = hr->arr;	
 						auto rs = hs.arr;
 						auto locA = rr[historyEventA*n+location];
-						auto sliceLocA = sliceA*11+locA;
+						auto sliceLocA = sliceA*nloc+locA;
 						auto sliceCount = activeA.historySlicesSetEvent.size();
 						std::map<std::size_t, std::size_t> neighbours;
-						for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
+						if (!actor._mode4Caching)
 						{
-							std::size_t steps = 1;
-							if (sliceLocB%11 != goal)
+							for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
 							{
-								bool found = false;
-								SizeUSet slicePrevious;	
-								slicePrevious.reserve(sliceCount);
-								slicePrevious.insert(sliceLocA);							
-								slicePrevious.insert(sliceLocB);							
-								SizeUSet sliceCurrents;		
-								sliceCurrents.reserve(sliceCount);
-								sliceCurrents.insert(sliceLocB);
-								while (!found && sliceCurrents.size())
+								std::size_t steps = 1;
+								if (sliceLocB%nloc != goal)
 								{
-									steps++;
-									SizeList sliceCurrentBs;
-									sliceCurrentBs.reserve(sliceCurrents.size() * 20);
-									for (auto sliceLocC : sliceCurrents)		
+									bool found = false;
+									SizeUSet slicePrevious;	
+									slicePrevious.reserve(sliceCount);
+									slicePrevious.insert(sliceLocA);							
+									slicePrevious.insert(sliceLocB);							
+									SizeUSet sliceCurrents;		
+									sliceCurrents.reserve(sliceCount);
+									sliceCurrents.insert(sliceLocB);
+									while (!found && sliceCurrents.size())
 									{
-										for (auto sliceLocD : actor._mode4SlicesSliceSetNext[sliceLocC])
-										{					
-											if (slicePrevious.find(sliceLocD) == slicePrevious.end())
-											{
-												if (sliceLocD%11 == goal)
+										steps++;
+										SizeList sliceCurrentBs;
+										sliceCurrentBs.reserve(sliceCurrents.size() * 20);
+										for (auto sliceLocC : sliceCurrents)		
+										{
+											for (auto sliceLocD : actor._mode4SlicesSliceSetNext[sliceLocC])
+											{					
+												if (slicePrevious.find(sliceLocD) == slicePrevious.end())
 												{
-													found = true;
-													break;
+													if (sliceLocD%nloc == goal)
+													{
+														found = true;
+														break;
+													}
+													sliceCurrentBs.push_back(sliceLocD);			
+													slicePrevious.insert(sliceLocD);			
 												}
-												sliceCurrentBs.push_back(sliceLocD);			
-												slicePrevious.insert(sliceLocD);			
 											}
-										}
+											if (found)
+												break;
+										}	
 										if (found)
-											break;
-									}	
+											break;	
+										sliceCurrents.clear();
+										sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
+									}
 									if (found)
-										break;	
-									sliceCurrents.clear();
-									sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
+										neighbours[sliceLocB] = steps;
 								}
-								if (found)
+								else
 									neighbours[sliceLocB] = steps;
 							}
-							else
-								neighbours[sliceLocB] = steps;
 						}
-						EVAL(neighbours);
+						else
+						{
+							auto& slicesStepCount = actor._mode4locationsSlicesStepCount[goal];
+							for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
+							{
+								auto it = slicesStepCount.find(sliceLocB);
+								if (it != slicesStepCount.end())
+									neighbours[sliceLocB] = it->second;								
+							}
+						}
+						// EVAL(neighbours);							
 						std::set<std::size_t> neighbourLeasts;
 						{
+							bool found = false;
 							std::size_t least = 0;
 							for (auto& p : neighbours)	
-								if (!least || least > p.second)
+								if (!found || least > p.second)
+								{
 									least = p.second;
+									found = true;
+								}
 							for (auto& p : neighbours)	
 								if (p.second == least)	
 									neighbourLeasts.insert(p.first);
-							EVAL(least);
+							// EVAL(least);
 						}
-						EVAL(neighbourLeasts);
+						// EVAL(neighbourLeasts);
 						std::map<std::size_t, std::size_t> actionsCount;
 						{
 							for (auto ev : activeA.historySlicesSetEvent[sliceA])
@@ -874,7 +893,7 @@ void run_act(Actor& actor)
 									auto locB = rr[(j%z)*n+location];
 									if (sliceB != sliceA)
 									{
-										if (neighbourLeasts.find(sliceB*11+locB) != neighbourLeasts.end())
+										if (neighbourLeasts.find(sliceB*nloc+locB) != neighbourLeasts.end())
 											actionsCount[rr[ev*n+motor]]++;
 										break;
 									}
@@ -883,7 +902,7 @@ void run_act(Actor& actor)
 							}
 							
 						}
-						EVAL(actionsCount);
+						// EVAL(actionsCount);
 						if (actionsCount.size())
 						{
 							char action = ahead;
@@ -1029,6 +1048,7 @@ Actor::Actor(const std::string& args_filename)
 	_mode1GuessLocation = ARGS_BOOL_DEF(guess_location,true);
 	_modeProbabilistic = ARGS_BOOL(probabilistic);
 	_modeMultipleTransition = ARGS_BOOL(multiple_transition);
+	_mode4Caching = ARGS_BOOL_DEF(caching,true);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -1534,6 +1554,9 @@ Actor::Actor(const std::string& args_filename)
 	}
 	else if (_struct=="struct001" && _mode=="mode004")
 	{	
+		std::vector<std::string> locations{ "door12", "door13", "door14", "door45", "door56", "room1", "room2", "room3", "room4", "room5", "room6" };
+		auto nloc = locations.size();
+		auto bloc = nloc - 6;
 		auto& activeA = *_level2.front();	
 		auto historyEventA = activeA.historyEvent ? activeA.historyEvent - 1 : activeA.historySize - 1;
 		std::shared_ptr<HistoryRepa> hr = activeA.underlyingHistoryRepa.front();
@@ -1549,7 +1572,7 @@ Actor::Actor(const std::string& args_filename)
 		auto rs = hs.arr;
 		auto sliceCount = activeA.historySlicesSetEvent.size();
 		std::unordered_map<std::size_t, std::map<std::size_t, std::size_t>> slicesSliceSetNext;
-		slicesSliceSetNext.reserve(sliceCount*11);
+		slicesSliceSetNext.reserve(sliceCount*nloc);
 		{
 			auto j = over ? y : z;	
 			auto sliceB = rs[j%z];
@@ -1561,7 +1584,7 @@ Actor::Actor(const std::string& args_filename)
 				auto locC = rr[(j%z)*n+location];
 				if (sliceC != sliceB)
 				{
-					slicesSliceSetNext[sliceB*11+locB][sliceC*11+locC]++;
+					slicesSliceSetNext[sliceB*nloc+locB][sliceC*nloc+locC]++;
 					sliceB = sliceC;
 					locB = locC;
 				}
@@ -1575,6 +1598,47 @@ Actor::Actor(const std::string& args_filename)
 				if (!_modeMultipleTransition || q.second > 1)
 					_mode4SlicesSliceSetNext[p.first].insert(q.first);
 			}
+		if (_mode4Caching)
+		{
+			std::unordered_map<std::size_t, Alignment::SizeSet> slicesSliceSetPrev;
+			slicesSliceSetPrev.reserve(sliceCount);
+			for (auto& p : _mode4SlicesSliceSetNext)
+				for (auto& q : p.second)
+					slicesSliceSetPrev[q].insert(p.first);
+			for (auto locA = bloc; locA < nloc; locA++)
+			{
+				auto& slicesStepCount = _mode4locationsSlicesStepCount[locA];
+				slicesStepCount.reserve(sliceCount);
+				SizeUSet sliceCurrents;
+				sliceCurrents.reserve(sliceCount);		
+				std::size_t steps = 0;				
+				for (auto& p : slicesSliceSetPrev)
+					if (p.first % nloc == locA)
+					{
+						slicesStepCount.insert_or_assign(p.first,steps);
+						sliceCurrents.insert(p.first);
+					}
+				while (sliceCurrents.size())
+				{
+					steps++;
+					SizeList sliceCurrentBs;
+					sliceCurrentBs.reserve(sliceCurrents.size() * 20);
+					for (auto sliceLocC : sliceCurrents)		
+					{
+						for (auto sliceLocD : slicesSliceSetPrev[sliceLocC])
+						{					
+							if (slicesStepCount.find(sliceLocD) == slicesStepCount.end())
+							{
+								sliceCurrentBs.push_back(sliceLocD);			
+								slicesStepCount.insert_or_assign(sliceLocD,steps);
+							}
+						}
+					}	
+					sliceCurrents.clear();
+					sliceCurrents.insert(sliceCurrentBs.begin(), sliceCurrentBs.end());
+				}				
+			}
+		}
 	}
 				
 	{

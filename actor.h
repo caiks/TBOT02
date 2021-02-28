@@ -75,7 +75,9 @@ public:
 	std::unordered_map<std::size_t, Alignment::SizeSet> _mode3SlicesSliceSetNext;
 	std::unordered_map<std::size_t, std::size_t> _mode3SlicesLocation;
 	bool _modeMultipleTransition;	
+	bool _mode4Caching;
 	std::unordered_map<std::size_t, Alignment::SizeSet> _mode4SlicesSliceSetNext;
+	std::map<std::size_t, std::unordered_map<std::size_t, std::size_t>> _mode4locationsSlicesStepCount;
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;
