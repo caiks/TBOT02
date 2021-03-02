@@ -810,7 +810,7 @@ void run_act(Actor& actor)
 							for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
 							{
 								std::size_t steps = 1;
-								if (sliceLocB%nloc != goal)
+								if (sliceLocB % nloc != goal)
 								{
 									bool found = false;
 									SizeUSet slicePrevious;	
@@ -831,7 +831,7 @@ void run_act(Actor& actor)
 											{					
 												if (slicePrevious.find(sliceLocD) == slicePrevious.end())
 												{
-													if (sliceLocD%nloc == goal)
+													if (sliceLocD % nloc == goal)
 													{
 														found = true;
 														break;
@@ -886,19 +886,21 @@ void run_act(Actor& actor)
 						{
 							for (auto ev : activeA.historySlicesSetEvent[sliceA])
 							{
-								auto j = ev + 1;	
-								while (j%z < y)
+								if (rr[ev*n+location] == locA)
 								{
-									auto sliceB = rs[j%z];
-									auto locB = rr[(j%z)*n+location];
-									if (sliceB != sliceA)
+									auto j = ev + 1;	
+									while (j%z < y)
 									{
-										if (neighbourLeasts.find(sliceB*nloc+locB) != neighbourLeasts.end())
-											actionsCount[rr[ev*n+motor]]++;
-										break;
-									}
-									j++;
-								}									
+										auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
+										if (sliceLocB != sliceLocA)
+										{
+											if (neighbourLeasts.find(sliceLocB) != neighbourLeasts.end())
+												actionsCount[rr[ev*n+motor]]++;
+											break;
+										}
+										j++;
+									}										
+								}
 							}
 							
 						}
@@ -1575,18 +1577,15 @@ Actor::Actor(const std::string& args_filename)
 		slicesSliceSetNext.reserve(sliceCount*nloc);
 		{
 			auto j = over ? y : z;	
-			auto sliceB = rs[j%z];
-			auto locB = rr[(j%z)*n+location];
+			auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
 			j++;
 			while (j < y+z)
 			{
-				auto sliceC = rs[j%z];
-				auto locC = rr[(j%z)*n+location];
-				if (sliceC != sliceB)
+				auto sliceLocC = rs[j%z]*nloc + rr[(j%z)*n+location];
+				if (sliceLocC != sliceLocB)
 				{
-					slicesSliceSetNext[sliceB*nloc+locB][sliceC*nloc+locC]++;
-					sliceB = sliceC;
-					locB = locC;
+					slicesSliceSetNext[sliceLocB][sliceLocC]++;
+					sliceLocB = sliceLocC;
 				}
 				j++;
 			}					
