@@ -703,8 +703,8 @@ void run_act(Actor& actor)
 						{
 							for (auto ev : activeA.historySlicesSetEvent[sliceA])
 							{
-								auto j = ev + 1;	
-								while (j%z < y)
+								auto j = ev + 1 + (over ? 0 : z);	
+								while (j < y+z)
 								{
 									auto sliceB = rs[j%z];
 									if (sliceB != sliceA)
@@ -855,8 +855,10 @@ void run_act(Actor& actor)
 									neighbours[sliceLocB] = steps;
 							}
 						}
+						// EVAL(neighbours);							
 						else
 						{
+							// neighbours.clear();
 							auto& slicesStepCount = actor._mode4locationsSlicesStepCount[goal];
 							for (auto sliceLocB : actor._mode4SlicesSliceSetNext[sliceLocA])
 							{
@@ -865,7 +867,7 @@ void run_act(Actor& actor)
 									neighbours[sliceLocB] = it->second;								
 							}
 						}
-						// EVAL(neighbours);							
+						EVAL(neighbours);							
 						std::set<std::size_t> neighbourLeasts;
 						{
 							bool found = false;
@@ -879,70 +881,73 @@ void run_act(Actor& actor)
 							for (auto& p : neighbours)	
 								if (p.second == least)	
 									neighbourLeasts.insert(p.first);
-							// EVAL(least);
+							EVAL(least);
 						}
-						// EVAL(neighbourLeasts);
-						std::map<std::size_t, std::size_t> actionsCount;
+						EVAL(neighbourLeasts);
+						if (neighbourLeasts.size() && neighbourLeasts.size() < neighbours.size())
 						{
-							for (auto ev : activeA.historySlicesSetEvent[sliceA])
+							std::map<std::size_t, std::size_t> actionsCount;
 							{
-								if (rr[ev*n+location] == locA)
+								for (auto ev : activeA.historySlicesSetEvent[sliceA])
 								{
-									auto j = ev + 1;	
-									while (j%z < y)
+									if (rr[ev*n+location] == locA)
 									{
-										auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
-										if (sliceLocB != sliceLocA)
+										auto j = ev + 1 + (over ? 0 : z);	
+										while (j < y+z)
 										{
-											if (neighbourLeasts.find(sliceLocB) != neighbourLeasts.end())
-												actionsCount[rr[ev*n+motor]]++;
+											auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
+											if (sliceLocB != sliceLocA)
+											{
+												if (neighbourLeasts.find(sliceLocB) != neighbourLeasts.end())
+													actionsCount[rr[(ev+actor._mode4Lag)*n+motor]]++;
+												break;
+											}
+											j++;
+										}										
+									}
+								}
+								
+							}
+							EVAL(actionsCount);
+							if (actionsCount.size())
+							{
+								char action = ahead;
+								if (actor._modeProbabilistic)
+								{
+									std::size_t total = 0;
+									for (auto& p : actionsCount)	
+										total += p.second;
+									auto r = rand() % total;
+									std::size_t accum = 0.0;
+									for (auto& p : actionsCount)
+									{
+										accum += p.second;
+										if (r < accum)
+										{
+											action = p.first;
 											break;
 										}
-										j++;
-									}										
+									}						
 								}
-							}
-							
-						}
-						// EVAL(actionsCount);
-						if (actionsCount.size())
-						{
-							char action = ahead;
-							if (actor._modeProbabilistic)
-							{
-								std::size_t total = 0;
-								for (auto& p : actionsCount)	
-									total += p.second;
-								auto r = rand() % total;
-								std::size_t accum = 0.0;
-								for (auto& p : actionsCount)
+								else
 								{
-									accum += p.second;
-									if (r < accum)
-									{
-										action = p.first;
-										break;
-									}
-								}						
-							}
-							else
-							{
-								if (actionsCount[turn_left] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_left] > actionsCount[turn_right])
-									action = turn_left;
-								else if (actionsCount[turn_right] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_right] > actionsCount[turn_left])
-									action = turn_right;	
-							}	
-							// locking here? TODO
-							if (action == turn_left)
-							{
-								actor._turn_request = "left";
-								actor._bias_right = false;
-							}
-							else if (action == turn_right)
-							{
-								actor._turn_request = "right";
-								actor._bias_right = true;
-							}					
+									if (actionsCount[turn_left] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_left] > actionsCount[turn_right])
+										action = turn_left;
+									else if (actionsCount[turn_right] * actor._acts_per_turn * 2 > actionsCount[ahead] && actionsCount[turn_right] > actionsCount[turn_left])
+										action = turn_right;	
+								}	
+								// locking here? TODO
+								if (action == turn_left)
+								{
+									actor._turn_request = "left";
+									actor._bias_right = false;
+								}
+								else if (action == turn_right)
+								{
+									actor._turn_request = "right";
+									actor._bias_right = true;
+								}					
+							}							
 						}
 					}
 					if (ok && actor._modeLogging)
@@ -1051,6 +1056,7 @@ Actor::Actor(const std::string& args_filename)
 	_modeProbabilistic = ARGS_BOOL(probabilistic);
 	_modeMultipleTransition = ARGS_BOOL(multiple_transition);
 	_mode4Caching = ARGS_BOOL_DEF(caching,true);
+	_mode4Lag = ARGS_INT_DEF(lag,1);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
