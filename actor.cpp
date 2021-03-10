@@ -187,7 +187,7 @@ void run_act(Actor& actor)
 						std::map<std::size_t, double> actionsPV;
 						auto n = hr->dimension;
 						auto z = hr->size;
-						auto y = historyEventA;
+						auto y = activeA.historyEvent;
 						auto rr = hr->arr;	
 						double	steps = 0.0;
 						if (actor._mode1GuessLocation)
@@ -406,7 +406,7 @@ void run_act(Actor& actor)
 						auto location = mvv[mm[Variable("location")]];
 						auto n = hr->dimension;
 						auto z = hr->size;
-						auto y = historyEventA;
+						auto y = activeA.historyEvent;
 						auto rr = hr->arr;	
 						auto rs = hs.arr;
 						auto sliceCount = activeA.historySlicesSetEvent.size();
@@ -636,7 +636,7 @@ void run_act(Actor& actor)
 						auto location = mvv[mm[Variable("location")]];
 						auto n = hr->dimension;
 						auto z = hr->size;
-						auto y = historyEventA;
+						auto y = activeA.historyEvent;
 						auto rr = hr->arr;	
 						auto rs = hs.arr;
 						auto sliceCount = activeA.historySlicesSetEvent.size();
@@ -703,7 +703,7 @@ void run_act(Actor& actor)
 						{
 							for (auto ev : activeA.historySlicesSetEvent[sliceA])
 							{
-								auto j = ev + 1 + (over ? 0 : z);	
+								auto j = ev + (ev >= y ? 0 : z)  + 1;	
 								while (j < y+z)
 								{
 									auto sliceB = rs[j%z];
@@ -798,7 +798,7 @@ void run_act(Actor& actor)
 						auto location = mvv[mm[Variable("location")]];
 						auto n = hr->dimension;
 						auto z = hr->size;
-						auto y = historyEventA;
+						auto y = activeA.historyEvent;
 						auto rr = hr->arr;	
 						auto rs = hs.arr;
 						auto locA = rr[historyEventA*n+location];
@@ -867,6 +867,9 @@ void run_act(Actor& actor)
 									neighbours[sliceLocB] = it->second;								
 							}
 						}
+						// EVAL(sliceA);							
+						// EVAL(locA);							
+						EVAL(sliceLocA);							
 						EVAL(neighbours);							
 						std::set<std::size_t> neighbourLeasts;
 						{
@@ -887,26 +890,75 @@ void run_act(Actor& actor)
 						if (neighbourLeasts.size() && neighbourLeasts.size() < neighbours.size())
 						{
 							std::map<std::size_t, std::size_t> actionsCount;
+							if (actor._mode4Stepwise)
+							{
+								std::map<std::size_t, std::map<std::size_t, std::size_t>> stepsActionsCount;
+								std::size_t stepsEventA = 0;
+								for (auto ev : activeA.historySlicesSetEvent[sliceA])
+								{
+									if (rr[ev*n+location] == locA)
+									{
+										std::size_t steps = 0;
+										{
+											auto j = ev + (ev >= y ? 0 : z) - 1;	
+											while (j >= (over ? y : z))
+											{
+												auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
+												if (sliceLocB != sliceLocA)
+													break;
+												j--;
+												steps++;
+											}												
+										}
+										if (historyEventA == ev)
+											stepsEventA = steps;
+										{
+											auto j = ev + (ev >= y ? 0 : z)  + 1;	
+											while (j < y+z)
+											{
+												auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
+												if (sliceLocB != sliceLocA)
+												{
+													if (neighbourLeasts.find(sliceLocB) != neighbourLeasts.end())
+														stepsActionsCount[steps][rr[((ev+actor._mode4Lag)%z)*n+motor]]++;
+													break;
+												}
+												j++;
+											}												
+										}
+									}
+								}	
+								EVAL(stepsEventA);
+								EVAL(stepsActionsCount);
+								if (stepsActionsCount.size())
+								{
+									auto it = stepsActionsCount.find(stepsEventA);
+									if (it != stepsActionsCount.end())
+										actionsCount = it->second;
+									else			
+										actionsCount = stepsActionsCount.rbegin()->second;
+								}								
+							}
+							else
 							{
 								for (auto ev : activeA.historySlicesSetEvent[sliceA])
 								{
 									if (rr[ev*n+location] == locA)
 									{
-										auto j = ev + 1 + (over ? 0 : z);	
+										auto j = ev + (ev >= y ? 0 : z)  + 1;	
 										while (j < y+z)
 										{
 											auto sliceLocB = rs[j%z]*nloc + rr[(j%z)*n+location];
 											if (sliceLocB != sliceLocA)
 											{
 												if (neighbourLeasts.find(sliceLocB) != neighbourLeasts.end())
-													actionsCount[rr[(ev+actor._mode4Lag)*n+motor]]++;
+													actionsCount[rr[((ev+actor._mode4Lag)%z)*n+motor]]++;
 												break;
 											}
 											j++;
 										}										
 									}
 								}
-								
 							}
 							EVAL(actionsCount);
 							if (actionsCount.size())
@@ -1057,6 +1109,7 @@ Actor::Actor(const std::string& args_filename)
 	_modeMultipleTransition = ARGS_BOOL(multiple_transition);
 	_mode4Caching = ARGS_BOOL_DEF(caching,true);
 	_mode4Lag = ARGS_INT_DEF(lag,1);
+	_mode4Stepwise = ARGS_BOOL(stepwise);
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);
@@ -1513,7 +1566,7 @@ Actor::Actor(const std::string& args_filename)
 		auto location = mvv[mm[Variable("location")]];
 		auto n = hr->dimension;
 		auto z = hr->size;
-		auto y = historyEventA;
+		auto y = activeA.historyEvent;
 		auto rr = hr->arr;	
 		auto rs = hs.arr;
 		auto sliceCount = activeA.historySlicesSetEvent.size();
@@ -1575,7 +1628,7 @@ Actor::Actor(const std::string& args_filename)
 		auto location = mvv[mm[Variable("location")]];
 		auto n = hr->dimension;
 		auto z = hr->size;
-		auto y = historyEventA;
+		auto y = activeA.historyEvent;
 		auto rr = hr->arr;	
 		auto rs = hs.arr;
 		auto sliceCount = activeA.historySlicesSetEvent.size();
