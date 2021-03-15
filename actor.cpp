@@ -887,6 +887,29 @@ void run_act(Actor& actor)
 							EVAL(least);
 						}
 						EVAL(neighbourLeasts);
+						if (sliceLocA != actor._mode4SliceLocA)
+						{
+							if (actor._mode4Neighbours.find(sliceLocA) == actor._mode4Neighbours.end())
+								actor._mode4TransistionNullCount++;
+							else 
+							{
+								if (actor._mode4NeighbourLeasts.find(sliceLocA) != actor._mode4NeighbourLeasts.end())
+									actor._mode4TransistionSuccessCount++;
+								actor._mode4TransistionExpectedSuccessCount += (double) actor._mode4NeighbourLeasts.size() / (double) actor._mode4Neighbours.size();
+							}
+							actor._mode4TransistionCount++;
+							double transition_success_rate = (double) actor._mode4TransistionSuccessCount * 100.0 / (double) actor._mode4TransistionCount;
+							double transition_expected_success_rate = (double) actor._mode4TransistionExpectedSuccessCount * 100.0 / (double) actor._mode4TransistionCount;
+							double transition_null_rate = (double) actor._mode4TransistionNullCount * 100.0 / (double) actor._mode4TransistionCount;
+							EVAL(transition_success_rate);
+							EVAL(transition_expected_success_rate);
+							EVAL(transition_null_rate);
+							actor._mode4SliceLocA = sliceLocA;
+							actor._mode4NeighbourLeasts = neighbourLeasts;
+							actor._mode4Neighbours.clear();
+							for (auto& p : neighbours)
+								actor._mode4Neighbours.insert(p.first);
+						}
 						if (neighbourLeasts.size() && neighbourLeasts.size() < neighbours.size())
 						{
 							std::map<std::size_t, std::size_t> actionsCount;
@@ -1110,6 +1133,10 @@ Actor::Actor(const std::string& args_filename)
 	_mode4Caching = ARGS_BOOL_DEF(caching,true);
 	_mode4Lag = ARGS_INT_DEF(lag,1);
 	_mode4Stepwise = ARGS_BOOL(stepwise);
+	_mode4TransistionSuccessCount = 0;
+	_mode4TransistionCount = 0;
+	_mode4TransistionExpectedSuccessCount = 0.0;
+	_mode4TransistionNullCount = 0;
 	{
 		_induceParametersLevel1.tint = _induceThreadCount;
 		_induceParametersLevel1.wmax = ARGS_INT_DEF(induceParametersLevel1.wmax,9);

@@ -79,7 +79,14 @@ public:
 	bool _mode4Stepwise;
 	std::unordered_map<std::size_t, Alignment::SizeSet> _mode4SlicesSliceSetNext;
 	std::map<std::size_t, std::unordered_map<std::size_t, std::size_t>> _mode4locationsSlicesStepCount;
-	std::size_t _mode4Lag;
+	int _mode4Lag;
+	std::set<std::size_t> _mode4Neighbours;
+	std::set<std::size_t> _mode4NeighbourLeasts;
+	std::size_t _mode4SliceLocA;
+	std::size_t _mode4TransistionSuccessCount;
+	std::size_t _mode4TransistionNullCount;
+	double _mode4TransistionExpectedSuccessCount;
+	std::size_t _mode4TransistionCount;
 	
 private:
 	rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr _cmd_vel_pub;
