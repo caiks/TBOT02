@@ -1030,27 +1030,30 @@ In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of
 
 ### Actor node
 
-The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. 
+In the previous section we showed that *inducing* a *model* dynamically in an active led to *likelihoods* which are roughly comparable to the *likelihoods* of the static *induction* of [TBOT01](https://github.com/caiks/TBOT01). Now let us see how dynamic *modelling* can be implemented in practice. 
 
-TODO
+The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. 
 
-It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. 
+`TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goals in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired goal `location`. 
 
-In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`.
+In order to test whether the `TBOT01` actor is navigating around the turtlebot house better than chance, its goal is set from a fixed sequence of randomly selected rooms. As soon as turtlebot has reached the current goal room, the next goal is set from the next room in the infinite sequence. This table summarises the results for various modes and *models*,
 
-```
-gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env009.model -s libgazebo_ros_init.so
+model|mode|rooms|mean|std err
+---|---|---|---|---
+none|random|55|3129|454
+model028_location|1|75|2503|341
+model028_location|2|60|2409|311
+model028_location|3|43|1049|134
+model027|3|33|1276|222
+model028_location|4|53|2057|293
+model028_location|5|242|873|50
+model027|5|38|1342|158
 
-```
+We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation. The actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
 
-```
-ros2 run TBOT02 controller data.bin 250 5000 5000 
+ 
 
-```
-```
-ros2 run TBOT02 actor 250 room5 struct001 model061 mode001
 
-```
 This shows the decline in *label entropy* for the *level* 2 *model*,
 
 model|size|label entropy/size
