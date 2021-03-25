@@ -745,6 +745,8 @@ ent(*add(*aa,*bb)) * (z+v): 2.21227e+06
 ent(*add(*aa,*bb)) * (z+v) - ent(*aa) * z - ent(*bb) * v: 221664
 ```
 
+<a name="induce05"></a>
+
 Let us simulate the dynamic *modelling* of the *2-level* *model* 27. In test `induce05` there are 12 *level* 1 actives each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* 2 active. We begin with an induce threshold *slice size* of 1,000, except for an initial induce threshold *slice size* for *level* 2 of 30,000,
 ```
 /usr/bin/time -v ./main induce05 model046 data009 1000 30000 >model046.log 2>&1
@@ -985,6 +987,8 @@ frame 1|frame 2|frame 3|self 1|self 2|self 3|likelihood
 
 We can see in the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s), there is an increase to a *likelihood* of 195,871. This seems to pick up the turtlebot's approach, turn and rebound from a wall. Separately there appears to be dynamic *alignment* between *frame* 0 (now) and *frame* 32 (8s), perhaps because of a common spacing between turns - a 'resonance' of the house dimensions. This dynamic *alignment* appears to be enhanced if we include the self *frames* of 6 (1.5s), 10 (2.5s) and 15 (3.75s). In general, self *frames* appear to be most interesting at longer times, whereas *underlying frames* appear to be optimised at specific times. We can conjecture that self *frames* are more general or contextual and less sensitive to their exact placement. *Underlying frames* work at particular dynamic geometries.
 
+<a name="induce08"></a>
+
 Lastly, consider the effect of *frames* on the *2-level model* 49,
 ```
 /usr/bin/time -v ./main induce08 model056 data009 50 30000 12 1 200 10000 0 1 3 6 10 15 >model056.log 2>&1
@@ -1030,11 +1034,11 @@ In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of
 
 ### Actor node
 
-In the previous section we showed that *inducing* a *model* dynamically in an active led to *likelihoods* which are roughly comparable to the *likelihoods* of the static *induction* of [TBOT01](https://github.com/caiks/TBOT01). Now let us see how dynamic *modelling* can be implemented in practice. 
+In the previous section we showed that *inducing* a *model* dynamically in an active leads to *likelihoods* which are roughly comparable to the *likelihoods* of the static *induction* of [TBOT01](https://github.com/caiks/TBOT01). Now let us see how dynamic *modelling* can be implemented in practice. 
 
 The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. 
 
-`TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goals in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired goal `location`. 
+`TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goals in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired `room_next`. 
 
 In order to test whether the `TBOT01` actor is navigating around the turtlebot house better than chance, its goal is set from a fixed sequence of randomly selected rooms. As soon as turtlebot has reached the current goal room, the next goal is set from the next room in the infinite sequence. This table summarises the results for various modes and *models*,
 
@@ -1051,8 +1055,48 @@ model027|5|38|1342|158
 
 We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation. The actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
 
- 
+`TBOT01` was implemented with a separate [controller](https://github.com/caiks/TBOT01/blob/master/controller.h) and actor. The controller processes the actions and action requests, avoids collisions and optionally performs turns at random intervals. It also records the lidar sensor data and odometry. The `TBOT01` actor made action requests to the controller based on the given *model* and *history* according to the mode.
 
+In `TBOT02` the controller functions are incorporated into the actor so that there is only a single node and there is no need for inter-process communication. The controller functions and actor functions run in separate threads, however, so that the turtlebot is always responsive. 
+
+The configuration of the `TBOT02` actor has been moved from the command line to a JSON file. At startup the actor reads its JSON file in order to determine the active structure amongst other parameters. If the structure is undefined the actor simply behaves in the same way as the `TBOT01` controller, avoiding collisions and optionally making random turns. 
+
+There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* 1 actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* 2 active. 
+
+`struct002` adds a third *level* to `struct001` (corresponding to test [`induce08` ](#induce08) above). This *level* contains 6 actives with various sets of underlying and reflexive *frames*.
+
+After creating the active structure the actor then creates three processes (implemented in the main thread or children threads) to perform its processing. The first is a node update process looping with an interval defaulting to 10 milliseconds. The node update performs the controller actions with collision avoidance and random turn.
+
+The second is an 'act' process that loops with an interval defaulting to 250 milliseconds. At each act the actor updates the active *levels* in sequence from lowest to highest, running the active updates within a *level* in parallel threads. The actor then processes the mode if set.
+
+Lastly the actor starts an induce process (implemented with separate threads for each active in the structure). The induce process loops by running the induce on the active and then sleeping for an interval defaulting to 10 milliseconds. This short interval means that the induce will be performed for any active breaching the induce threshold soon after the breaching *event* is updated. The actor therefore is *modelling* the whole active structure in near real-time.
+
+When the `TBOT02` is terminated, it dumps the actives to file. A subsequent run can specify an initial *model* so that there is no need to *model* from scratch each time. The mode tests often used the same initial *model* to ensure that the starting point was the same for each.
+
+The first `TBOT02` *model* is *model* 61 which has the following configuration -
+```json
+{
+	"bias_interval" : 5000,
+	"turn_interval" : 5000,
+	"structure" : "struct001",
+	"model" : "model061",
+	"logging_level2" : true
+}
+```
+*Model* 61 is configured with a random turn interval of 5 seconds. 
+Run the simulation -
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
+cd ~/turtlebot3_ws/src/TBOT02_ws
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env009.model -s libgazebo_ros_init.so
+
+```
+Run the actor -
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 actor model061.json
+
+```
 
 This shows the decline in *label entropy* for the *level* 2 *model*,
 

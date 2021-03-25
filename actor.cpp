@@ -1098,7 +1098,7 @@ Actor::Actor(const std::string& args_filename)
 	_actInterval = (std::chrono::milliseconds)(ARGS_INT_DEF(act_interval,250));
 	_acts_per_turn = ARGS_INT_DEF(acts_per_turn,20);
 	_goal = ARGS_STRING_DEF(goal_initial,"room5");
-	_struct = ARGS_STRING_DEF(structure,"struct001");
+	_struct = ARGS_STRING(structure);
 	_model = ARGS_STRING(model);
 	std::string modelInitial = ARGS_STRING(model_initial);
 	std::string structInitial = ARGS_STRING(structure_initial);
