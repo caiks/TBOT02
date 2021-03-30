@@ -1059,17 +1059,17 @@ We can see that *model* 28, which is *conditioned* on `location`, is quicker tha
 
 In `TBOT02` the controller functions are incorporated into the actor so that there is only a single node and there is no need for inter-process communication. The controller functions and actor functions run in separate threads, however, so that the turtlebot is always responsive. 
 
-The configuration of the `TBOT02` actor has been moved from the command line to a JSON file. At startup the actor reads its JSON file in order to determine the active structure amongst other parameters. If the structure is undefined the actor simply behaves in the same way as the `TBOT01` controller, avoiding collisions and optionally making random turns. 
+The configuration of the `TBOT02` actor has been moved from the command line to a JSON file. At startup the actor reads its JSON file in order to determine the active structure amongst other parameters. If the structure is undefined the actor simply behaves in the same way as the `TBOT01` controller, generally moving ahead while avoiding collisions and optionally making random turns. 
 
-There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* 1 actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* 2 active. 
+There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* one actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* two active. 
 
 `struct002` adds a third *level* to `struct001` (corresponding to test [`induce08` ](#induce08) above). This *level* contains 6 actives with various sets of underlying and reflexive *frames*.
 
-After creating the active structure the actor then creates three processes (implemented in the main thread or children threads) to perform its processing. The first is a node update process looping with an interval defaulting to 10 milliseconds. The node update performs the controller actions with collision avoidance and random turn.
+After creating the active structure the actor then initialises three types of processing, implemented in the main thread or children threads. The first is the node update looping in the main thread with an interval defaulting to 10 milliseconds. The node update performs the controller actions with collision avoidance and random turn.
 
-The second is an 'act' process that loops with an interval defaulting to 250 milliseconds. At each act the actor updates the active *levels* in sequence from lowest to highest, running the active updates within a *level* in parallel threads. The actor then processes the mode if set.
+The second is an 'act' thread that loops with an interval defaulting to 250 milliseconds. At each act the actor updates the active *levels* in sequence from lowest to highest, running the active updates within a *level* in parallel threads. The actor then processes the mode if set.
 
-Lastly the actor starts an induce process (implemented with separate threads for each active in the structure). The induce process loops by running the induce on the active and then sleeping for an interval defaulting to 10 milliseconds. This short interval means that the induce will be performed for any active breaching the induce threshold soon after the breaching *event* is updated. The actor therefore is *modelling* the whole active structure in near real-time.
+Lastly the actor starts separate induce threads for each active in the structure. An induce thread loops by running the induce on its active and then sleeping for an interval defaulting to 10 milliseconds. This short interval means that the induce will be performed for any active breaching the induce threshold soon after the breaching *event* is updated. The actor therefore is *modelling* the whole active structure in near real-time.
 
 When the `TBOT02` is terminated, it dumps the actives to file. A subsequent run can specify an initial *model* so that there is no need to *model* from scratch each time. The mode tests often used the same initial *model* to ensure that the starting point was the same for each.
 
@@ -1084,6 +1084,7 @@ The first `TBOT02` *model* is *model* 61 which has the following configuration -
 }
 ```
 *Model* 61 is configured with a random turn interval of 5 seconds. 
+
 Run the simulation -
 ```
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
@@ -1097,6 +1098,34 @@ cd ~/turtlebot3_ws/src/TBOT02_ws
 ros2 run TBOT02 actor model061.json
 
 ```
+The actor can be configured to output various log information about the active induces and updates at each *level*.
+
+Note that, depending on the compute capacity, the simulations could sometimes be run at multiples of real-time. `env011` and `env012` run with real-time factors of 2 and 4 respectively. There is also `env013`, which has a factor of 1/2, for the case where there is insufficient CPU. Lastly `env014` has a factor of 1/20 to enable debugging of the modes.
+
+When an initial *model* is loaded the actor writes some details of its active structure. These are the details for *model* 61 -
+```
+model_1_00  fuds cardinality: 176   model cardinality: 3013 active size: 10000      fuds per threshold: 1.76
+model_1_01  fuds cardinality: 156   model cardinality: 2530 active size: 10000      fuds per threshold: 1.56
+model_1_02  fuds cardinality: 157   model cardinality: 2540 active size: 10000      fuds per threshold: 1.57
+model_1_03  fuds cardinality: 136   model cardinality: 2265 active size: 10000      fuds per threshold: 1.36
+model_1_04  fuds cardinality: 150   model cardinality: 2442 active size: 10000      fuds per threshold: 1.5
+model_1_05  fuds cardinality: 176   model cardinality: 2852 active size: 10000      fuds per threshold: 1.76
+model_1_06  fuds cardinality: 178   model cardinality: 2886 active size: 10000      fuds per threshold: 1.78
+model_1_07  fuds cardinality: 159   model cardinality: 2509 active size: 10000      fuds per threshold: 1.59
+model_1_08  fuds cardinality: 151   model cardinality: 2421 active size: 10000      fuds per threshold: 1.51
+model_1_09  fuds cardinality: 123   model cardinality: 1962 active size: 10000      fuds per threshold: 1.23
+model_1_10  fuds cardinality: 145   model cardinality: 2385 active size: 10000      fuds per threshold: 1.45
+model_1_11  fuds cardinality: 169   model cardinality: 2601 active size: 10000      fuds per threshold: 1.69
+model_2     fuds cardinality: 2879  model cardinality: 42250        active size: 258581     fuds per threshold: 1.11338
+```
+We can see that the *level* one actives all have a similar number of *fuds* and *transforms* in their *models*. The active *history* has filled the available *size* of 10,000 *events*. The number of *fuds* per *size* per *induce* threshold varies from around 1.3 to 1.8. This metric is a simple proxy for *likelihood*. We can see that the forward and rearward facing actives tend to have higher *likelihoods* than the regions to the sides.
+
+The *level* two active is much larger with 2,879 *fuds* because of a larger active *history* of 258,581 *events*. The active *size* limit has not been reached, however, so the *likelihood* proxy is only 1.11338. This suggests that the proxy is only really a proxy for *likelihood* when comparing actives with the same *history size*. For example, if we run *model* 61 for a another hour or two, we see a decline to 1.1099 -
+```
+model_2     fuds cardinality: 3138  model cardinality: 45849        active size: 282728     fuds per threshold: 1.1099
+```
+This suggests that the environment yields lower *fud alignments* at the margin. Of course, the overall *likelihood* has still increased. 
+
 
 This shows the decline in *label entropy* for the *level* 2 *model*,
 
