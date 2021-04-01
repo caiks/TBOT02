@@ -1036,11 +1036,11 @@ In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of
 
 In the previous section we showed that *inducing* a *model* dynamically in an active leads to *likelihoods* which are roughly comparable to the *likelihoods* of the static *induction* of [TBOT01](https://github.com/caiks/TBOT01). Now let us see how dynamic *modelling* can be implemented in practice. 
 
-The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. 
+The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. The *variable* `room_next` looks forward from each *event* of the given *history* to the first change in `location` *value* which is also a room. 
 
 `TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goals in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired `room_next`. 
 
-In order to test whether the `TBOT01` actor is navigating around the turtlebot house better than chance, its goal is set from a fixed sequence of randomly selected rooms. As soon as turtlebot has reached the current goal room, the next goal is set from the next room in the infinite sequence. This table summarises the results for various modes and *models*,
+In order to test whether the `TBOT01` actor is navigating around the turtlebot house better than chance, its goal is set from a fixed sequence of randomly selected rooms. As soon as the turtlebot has reached the current goal room, the next goal is set from the next room in the infinite sequence. This table summarises the results for various modes and *models*,
 
 model|mode|rooms|mean|std err
 ---|---|---|---|---
@@ -1053,27 +1053,29 @@ model028_location|4|53|2057|293
 model028_location|5|242|873|50
 model027|5|38|1342|158
 
-We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation. The actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
+We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation, because the `location` *entropy* is lower. Actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
 
-`TBOT01` was implemented with a separate [controller](https://github.com/caiks/TBOT01/blob/master/controller.h) and actor. The controller processes the actions and action requests, avoids collisions and optionally performs turns at random intervals. It also records the lidar sensor data and odometry. The `TBOT01` actor made action requests to the controller based on the given *model* and *history* according to the mode.
+`TBOT01` is implemented with a separate [controller](https://github.com/caiks/TBOT01/blob/master/controller.h) and actor. The controller processes the actions and action requests, avoids collisions and optionally performs turns at random intervals. It also records the lidar sensor data and odometry. The `TBOT01` actor makes action requests to the controller based on the given *model* and *history* according to the mode.
 
 In `TBOT02` the controller functions are incorporated into the actor so that there is only a single node and there is no need for inter-process communication. The controller functions and actor functions run in separate threads, however, so that the turtlebot is always responsive. 
 
 The configuration of the `TBOT02` actor has been moved from the command line to a JSON file. At startup the actor reads its JSON file in order to determine the active structure amongst other parameters. If the structure is undefined the actor simply behaves in the same way as the `TBOT01` controller, generally moving ahead while avoiding collisions and optionally making random turns. 
 
-There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* one actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* two active. 
+There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* one actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* two active. The *level* one active *history size* defaults to 10,000 *events*. The *level* two active *size* defaults to 1,000,000 *events*. 
 
-`struct002` adds a third *level* to `struct001` (corresponding to test [`induce08` ](#induce08) above). This *level* contains 6 actives with various sets of underlying and reflexive *frames*.
+`struct002` adds a third *level* to `struct001` (corresponding to test [`induce08` ](#induce08) above). This *level* contains 6 actives with various sets of underlying and reflexive *frames*. The *level* three active *size* defaults to 1,000,000 *events*. 
+
+The *induce* threshold defaults to 100 *events* for the actives in both structures.
 
 After creating the active structure the actor then initialises three types of processing, implemented in the main thread or children threads. The first is the node update looping in the main thread with an interval defaulting to 10 milliseconds. The node update performs the controller actions with collision avoidance and random turn.
 
-The second is an 'act' thread that loops with an interval defaulting to 250 milliseconds. At each act the actor updates the active *levels* in sequence from lowest to highest, running the active updates within a *level* in parallel threads. The actor then processes the mode if set.
+The second is an 'act' thread that loops with an interval defaulting to 250 milliseconds. At each act the actor updates the active *levels* with the current *event*. The *levels* are updated in sequence from lowest to highest, running the active updates within a *level* in parallel threads. The actor then processes the mode if set.
 
 Lastly the actor starts separate induce threads for each active in the structure. An induce thread loops by running the induce on its active and then sleeping for an interval defaulting to 10 milliseconds. This short interval means that the induce will be performed for any active breaching the induce threshold soon after the breaching *event* is updated. The actor therefore is *modelling* the whole active structure in near real-time.
 
-When the `TBOT02` is terminated, it dumps the actives to file. A subsequent run can specify an initial *model* so that there is no need to *model* from scratch each time. The mode tests often used the same initial *model* to ensure that the starting point was the same for each.
+When the `TBOT02` is terminated, it dumps the actives to file. A subsequent run can specify an initial *model* so that there is no need to *model* from scratch each time. The mode tests often use the same initial *model* to ensure that the starting point is the same for each.
 
-The first `TBOT02` *model* is *model* 61 which has the following configuration -
+The first `TBOT02` *model* is *model* 61 which has the following JSON configuration -
 ```json
 {
 	"bias_interval" : 5000,
@@ -1100,9 +1102,9 @@ ros2 run TBOT02 actor model061.json
 ```
 The actor can be configured to output various log information about the active induces and updates at each *level*.
 
-Note that, depending on the compute capacity, the simulations could sometimes be run at multiples of real-time. `env011` and `env012` run with real-time factors of 2 and 4 respectively. There is also `env013`, which has a factor of 1/2, for the case where there is insufficient CPU. Lastly `env014` has a factor of 1/20 to enable debugging of the modes.
+Note that, depending on the compute capacity, the simulations can sometimes be run at multiples of real-time. `env011` and `env012` run with real-time factors of 2 and 4 respectively. There is also `env013`, which has a factor of 1/2, for the case where there is insufficient CPU. Lastly `env014` has a factor of 1/20 to enable debugging of the modes.
 
-When an initial *model* is loaded the actor writes some details of its active structure. These are the details for *model* 61 -
+When an initial *model* is loaded the actor logs some details of its active structure. These are the details for *model* 61 -
 ```
 model_1_00  fuds cardinality: 176   model cardinality: 3013 active size: 10000      fuds per threshold: 1.76
 model_1_01  fuds cardinality: 156   model cardinality: 2530 active size: 10000      fuds per threshold: 1.56
@@ -1124,8 +1126,102 @@ The *level* two active is much larger with 2,879 *fuds* because of a larger acti
 ```
 model_2     fuds cardinality: 3138  model cardinality: 45849        active size: 282728     fuds per threshold: 1.1099
 ```
-This suggests that the environment yields lower *fud alignments* at the margin. Of course, the overall *likelihood* has still increased. 
+This suggests that the environment yields lower *fud alignments* at the margin. Of course, the overall *likelihood* must have increased nonetheless. 
 
+#### Actor node mode 1
+
+Given that the *likelihood* of dynamic *modelling* is usually not much less than the *likelihood* of static *modelling*, we can be fairly certain that had we implemented the modes in the same way as in `TBOT01` we would have had similar results. 
+
+In `TBOT02` mode 1 we have tried a different approach in order to explore goal definition a little deeply. All of the `TBOT01` modes relied on the *variable* `room_next` with *values* `room1`, `room2`, `room3`, `room4`, `room5` and `room6`. These *values* do not give us any idea of the distance to goal, measured either by *events* or *slice* transitions. All we can do is select the *events* in the current *slice* with the desired *value* in order to choose the `motor` *value*. 
+
+In `TBOT02` we add the concept of distance to the next room measured in the number of *events* from each *event* in the current *slice* to the `location` transition. Furthermore, we discount distant transitions so that short past journeys to the desired next room contribute more than long journeys. Of course, the move from the discrete count of desired *events* in the current *slice* to real valued measure of the desired *events* adds many more options, such as the discount rate.
+
+The multitude of possible discounting configuration options and the fact that the active *history* is constantly changing in the dynamic `TBOT02` means that the results are much less consistent than for `TBOT01`. However, it does appear that the results of some configurations of various *models* do approach those of `TBOT01` *model* 27. For example *model* 62 -
+```json
+{
+	"update_interval" : 5,
+	"act_interval" : 60,
+	"bias_interval" : 1250,
+	"structure" : "struct001",
+	"model_initial" : "model061",
+	"model" : "model062",
+	"mode" : "mode001",
+	"summary_level1" : true,
+	"summary_level2" : true
+}
+```
+Run the simulation -
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
+cd ~/turtlebot3_ws/src/TBOT02_ws
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env012.model -s libgazebo_ros_init.so
+```
+Run the actor -
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 actor model062.json
+
+```
+Run the commander to set the goal sequence -
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 commander room5 60
+
+```
+The commander had the following log -
+```
+room_initial: room5
+TBOT02 commander node has been initialised
+goal: room2     n: 1    mean: 471       std dev: 0      std err: 0      running mean: 471       running std dev: 0      running std err: 0
+goal: room6     n: 2    mean: 1188      std dev: 717    std err: 506.996        running mean: 1188      running std dev: 717    running std err: 506.996
+goal: room2     n: 3    mean: 1759.67   std dev: 998.164        std err: 576.29 running mean: 1759.67   running std dev: 998.164        running std err: 576.29
+goal: room6     n: 4    mean: 2203      std dev: 1156.24        std err: 578.118        running mean: 2203      running std dev: 1156.24        running std err: 578.118
+goal: room2     n: 5    mean: 2523.6    std dev: 1216.82        std err: 544.177        running mean: 2523.6    running std dev: 1216.82        running std err: 544.177
+goal: room4     n: 6    mean: 2657.17   std dev: 1150.25        std err: 469.587        running mean: 2657.17   running std dev: 1150.25        running std err: 469.587
+goal: room6     n: 7    mean: 2378.57   std dev: 1264.81        std err: 478.054        running mean: 2378.57   running std dev: 1264.81        running std err: 478.054
+goal: room2     n: 8    mean: 2211.38   std dev: 1263.12        std err: 446.579        running mean: 2211.38   running std dev: 1263.12        running std err: 446.579
+goal: room4     n: 9    mean: 2291.78   std dev: 1212.4 std err: 404.133        running mean: 2291.78   running std dev: 1212.4 running std err: 404.133
+goal: room6     n: 10   mean: 2620.4    std dev: 1514.88        std err: 479.046        running mean: 2620.4    running std dev: 1514.88        running std err: 479.046
+...
+goal: room2     n: 459  mean: 1401.19   std dev: 1368.12        std err: 63.8582        running mean: 1573.3    running std dev: 1713.03        running std err: 541.708
+goal: room3     n: 460  mean: 1400.37   std dev: 1366.74        std err: 63.7246        running mean: 1461.3    running std dev: 1708.53        running std err: 540.286
+goal: room2     n: 461  mean: 1399.75   std dev: 1365.32        std err: 63.5894        running mean: 1555.9    running std dev: 1659.8 running std err: 524.875
+goal: room5     n: 462  mean: 1397.55   std dev: 1364.66        std err: 63.4897        running mean: 1458.9    running std dev: 1696.64        running std err: 536.525
+goal: room4     n: 463  mean: 1396.34   std dev: 1363.43        std err: 63.364 running mean: 1512.7    running std dev: 1667.32        running std err: 527.252
+goal: room5     n: 464  mean: 1393.48   std dev: 1363.35        std err: 63.2919        running mean: 1476.5    running std dev: 1694.1 running std err: 535.722
+goal: room3     n: 465  mean: 1390.86   std dev: 1363.06        std err: 63.2104        running mean: 1420.5    running std dev: 1726.76        running std err: 546.05
+goal: room6     n: 466  mean: 1390.3    std dev: 1361.65        std err: 63.0772        running mean: 1054.7    running std dev: 1312.37        running std err: 415.009
+goal: room3     n: 467  mean: 1389.58   std dev: 1360.28        std err: 62.9462        running mean: 1082.6    running std dev: 1309.14        running std err: 413.985
+goal: room6     n: 468  mean: 1388.12   std dev: 1359.19        std err: 62.8286        running mean: 1131.9    running std dev: 1284.59        running std err: 406.222
+goal: room5     n: 469  mean: 1401.34   std dev: 1387.51        std err: 64.0693        running mean: 1408.4    running std dev: 2092.44        running std err: 661.688
+```
+
+This is the summary for mode 1, with random mode of `TBOT01` as a baseline -
+
+model|mode|rooms|mean|std err
+---|---|---|---|---
+TBOT01|random|55|3129|454
+model062|1|469|1401|64
+model063|1|195|1553|113
+model064|1|64|1332|166
+model064|1|67|2172|315
+model065|1|125|2516|253
+model065|1|115|3215|375
+model066|1|76|1236|112
+model066|1|115|1479|138
+model067|1|98|1559|166
+model068|1|82|1386|125
+model068|1|89|1680|208
+
+means that non-linear effects 
+
+Rather than repeat exactly the same
+differences with TBOT01 - implemented with a variable `room_next` which looks forward from each *event* to a room transition, thus avoiding the need to dynamically search the *history* from the *events* in the current *slice*.
+
+
+
+
+Mode 2 is where the slice top is constructed at each act, but too slow.
 
 This shows the decline in *label entropy* for the *level* 2 *model*,
 
