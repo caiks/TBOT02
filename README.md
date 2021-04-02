@@ -1036,9 +1036,9 @@ In the case of *frames* of 0 (now), 1 (0.25s) and 3 (0.75s) and self *frames* of
 
 In the previous section we showed that *inducing* a *model* dynamically in an active leads to *likelihoods* which are roughly comparable to the *likelihoods* of the static *induction* of [TBOT01](https://github.com/caiks/TBOT01). Now let us see how dynamic *modelling* can be implemented in practice. 
 
-The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine its *slice*. The *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. The *variable* `room_next` looks forward from each *event* of the given *history* to the first change in `location` *value* which is also a room. 
+The `TBOT02` [actor](https://github.com/caiks/TBOT02/blob/master/actor.h) node is a dynamic version of the `TBOT01` [actor](https://github.com/caiks/TBOT01/blob/master/actor.h) node. Let us remind ourselves how the `TBOT01` actor works. It is given a *model*, a goal room and a mode of deciding actions. At each potential action it *applies* the *model* to the current *event* to determine the current *slice* *variable*. The corresponding *slice* of the given *history*, e.g. `data009`, is *reduced* to a *histogram* of the label *variables* `location`, `motor` and `room_next`. The *variable* `room_next` is an indirect *substrate variable* in that it's *value* is a copy of another *variable's value* at a future *event*. To be precise, it to  looks forward from each *event* of the given *history* to the first change in `location` *value* which is also a room. 
 
-`TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goals in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired `room_next`. 
+`TBOT01` has various modes of operation. In the simplest mode, `mode001`, this label *histogram* is *multiplied* by a *unit histogram* that defines the desired `room_next` given the goal room and the *slice's* `location`. For example, if the goal is room 6 and the `location` is room 1 then the `room_next` is room 4, rather than rooms 2 or 3. The turtlebot guesses `location` and then repeats the `motor` actions that tended in the past to lead to the desired goal. That is, the requested action is chosen at random according to the *probability histogram* implied by the *normalised reduction* to `motor`. The other modes add more and more refinements in order to attain the goal in less time. All of the modes are  independent of the number of *events* or *slices* to a `location` transition (defined as a change in *value* between successive *events*). They only depend on the fraction of the current *slice* that ultimately obtained the desired `room_next`. 
 
 In order to test whether the `TBOT01` actor is navigating around the turtlebot house better than chance, its goal is set from a fixed sequence of randomly selected rooms. As soon as the turtlebot has reached the current goal room, the next goal is set from the next room in the infinite sequence. This table summarises the results for various modes and *models*,
 
@@ -1053,7 +1053,7 @@ model028_location|4|53|2057|293
 model028_location|5|242|873|50
 model027|5|38|1342|158
 
-We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation, because the `location` *entropy* is lower. Actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
+We can see that *model* 28, which is *conditioned* on `location`, is quicker than *induced model* 27 for the same mode of operation, because the `location` *entropy* label is lower. Actives dynamically *induce* their *models*, so the proper comparison between `TBOT02` and `TBOT01` is the case of *model* 27. 
 
 `TBOT01` is implemented with a separate [controller](https://github.com/caiks/TBOT01/blob/master/controller.h) and actor. The controller processes the actions and action requests, avoids collisions and optionally performs turns at random intervals. It also records the lidar sensor data and odometry. The `TBOT01` actor makes action requests to the controller based on the given *model* and *history* according to the mode.
 
@@ -1061,7 +1061,7 @@ In `TBOT02` the controller functions are incorporated into the actor so that the
 
 The configuration of the `TBOT02` actor has been moved from the command line to a JSON file. At startup the actor reads its JSON file in order to determine the active structure amongst other parameters. If the structure is undefined the actor simply behaves in the same way as the `TBOT01` controller, generally moving ahead while avoiding collisions and optionally making random turns. 
 
-There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* one actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* two active. The *level* one active *history size* defaults to 10,000 *events*. The *level* two active *size* defaults to 1,000,000 *events*. 
+There are only two `TBOT02` structures. `struct001` defines the two *level* active structure that corresponds to test [`induce05` ](#induce05) above. In this case there are 12 *level* one actives, each with a fixed non-overlapping field-of-view of 30 degrees, and 1 *level* two active. The *level* one active *history size* defaults to 10,000 *events*  (around 42 minutes at 4 fps). The *level* two active *size* defaults to 1,000,000 *events* (around 3 days at 4 fps). 
 
 `struct002` adds a third *level* to `struct001` (corresponding to test [`induce08` ](#induce08) above). This *level* contains 6 actives with various sets of underlying and reflexive *frames*. The *level* three active *size* defaults to 1,000,000 *events*. 
 
@@ -1085,7 +1085,7 @@ The first `TBOT02` *model* is *model* 61 which has the following JSON configurat
 	"logging_level2" : true
 }
 ```
-*Model* 61 is configured with a random turn interval of 5 seconds. 
+*Model* 61 is configured with a random turn interval of 5 seconds, i.e. it is in 'random' mode. *Model* 61 is provided as an initial *model* for subsequent mode tests.
 
 Run the simulation -
 ```
@@ -1122,21 +1122,21 @@ model_2     fuds cardinality: 2879  model cardinality: 42250        active size:
 ```
 We can see that the *level* one actives all have a similar number of *fuds* and *transforms* in their *models*. The active *history* has filled the available *size* of 10,000 *events*. The number of *fuds* per *size* per *induce* threshold varies from around 1.3 to 1.8. This metric is a simple proxy for *likelihood*. We can see that the forward and rearward facing actives tend to have higher *likelihoods* than the regions to the sides.
 
-The *level* two active is much larger with 2,879 *fuds* because of a larger active *history* of 258,581 *events*. The active *size* limit has not been reached, however, so the *likelihood* proxy is only 1.11338. This suggests that the proxy is only really a proxy for *likelihood* when comparing actives with the same *history size*. For example, if we run *model* 61 for a another hour or two, we see a decline to 1.1099 -
+The *level* two active is much larger with 2,879 *fuds* because of a larger active *history* of 258,581 *events*. The active *size* limit has not been reached, however, so the *likelihood* proxy is only 1.11338. This suggests that the proxy is only a good proxy for *likelihood* when comparing actives with similar *history size*. For example, if we run *model* 61 for a another hour or two, we see a decline to 1.1099 -
 ```
 model_2     fuds cardinality: 3138  model cardinality: 45849        active size: 282728     fuds per threshold: 1.1099
 ```
 This suggests that the environment yields lower *fud alignments* at the margin. Of course, the overall *likelihood* must have increased nonetheless. 
 
-#### Actor node mode 1
+#### Discounted goals - mode 1
 
-Given that the *likelihood* of dynamic *modelling* is usually not much less than the *likelihood* of static *modelling*, we can be fairly certain that had we implemented the modes in the same way as in `TBOT01` we would have had similar results. 
+Given that the *likelihood* of dynamic *modelling* is usually not much less than the *likelihood* of static *modelling*, we can be fairly certain that had we implemented the modes of `TBOT02` in the same way as in `TBOT01` we would have had similar results. 
 
-In `TBOT02` mode 1 we have tried a different approach in order to explore goal definition a little deeply. All of the `TBOT01` modes relied on the *variable* `room_next` with *values* `room1`, `room2`, `room3`, `room4`, `room5` and `room6`. These *values* do not give us any idea of the distance to goal, measured either by *events* or *slice* transitions. All we can do is select the *events* in the current *slice* with the desired *value* in order to choose the `motor` *value*. 
+In `TBOT02` mode 1 we have tried a different approach in order to explore goal definition a little further. All of the `TBOT01` modes relied on the *variable* `room_next` with *values* `room1`, `room2`, `room3`, `room4`, `room5` and `room6`. These *values* do not give us any idea of the distance to the next room, measured either by the number of *events* or by the number of *slice* transitions. All we can do is select the *events* in the current *slice* with the desired `room_next` *value*, and then  of this subset choose the `motor` *value* with the highest *count*.
 
-In `TBOT02` we add the concept of distance to the next room measured in the number of *events* from each *event* in the current *slice* to the `location` transition. Furthermore, we discount distant transitions so that short past journeys to the desired next room contribute more than long journeys. Of course, the move from the discrete count of desired *events* in the current *slice* to real valued measure of the desired *events* adds many more options, such as the discount rate.
+In `TBOT02` we add the concept of distance to the next room measured as the number of *events* from each *event* in the current *slice* to the room transition. Furthermore, we discount distant transitions so that short past journeys to the desired next room contribute more than long journeys. Of course, the move from the discrete *count* of desired *events* in the current *slice* to a real valued measure of future outcomes adds many more options, such as the discount rate.
 
-The multitude of possible discounting configuration options and the fact that the active *history* is constantly changing in the dynamic `TBOT02` means that the results are much less consistent than for `TBOT01`. However, it does appear that the results of some configurations of various *models* do approach those of `TBOT01` *model* 27. For example *model* 62 -
+The multitude of possible discounting configuration options and the fact that both the active *history* and the active *model* are always changing in the dynamic `TBOT02` means that the results are much less consistent than for `TBOT01`. However, it does appear that the results of some configurations of various *models* do approach those of `TBOT01` *model* 27. For example *model* 62 -
 ```json
 {
 	"update_interval" : 5,
@@ -1201,29 +1201,19 @@ This is the summary for mode 1, with random mode of `TBOT01` as a baseline -
 model|mode|rooms|mean|std err
 ---|---|---|---|---
 TBOT01|random|55|3129|454
-model062|1|469|1401|64
-model063|1|195|1553|113
-model064|1|64|1332|166
-model064|1|67|2172|315
-model065|1|125|2516|253
-model065|1|115|3215|375
-model066|1|76|1236|112
-model066|1|115|1479|138
-model067|1|98|1559|166
-model068|1|82|1386|125
-model068|1|89|1680|208
+62|1|469|1401|64
+63|1|195|1553|113
+64|1|64|1332|166
+64|1|67|2172|315
+65|1|125|2516|253
+65|1|115|3215|375
+66|1|76|1236|112
+66|1|115|1479|138
+67|1|98|1559|166
+68|1|82|1386|125
+68|1|89|1680|208
 
-means that non-linear effects 
-
-Rather than repeat exactly the same
-differences with TBOT01 - implemented with a variable `room_next` which looks forward from each *event* to a room transition, thus avoiding the need to dynamically search the *history* from the *events* in the current *slice*.
-
-
-
-
-Mode 2 is where the slice top is constructed at each act, but too slow.
-
-This shows the decline in *label entropy* for the *level* 2 *model*,
+As we can see, the mean time to goal varies a great deal, from actually exceeding the random mode to a time similar to *model* 27. Even with the same *model* configuration the times can vary far more than the standard error would suggest. This suggests that there are non-linear effects especially in the 'deterministic' configurations where the most probable action is always chosen. In these cases an error in the guess of `location` can effectively block a doorway from several approachs. Although larger active *models* and *histories* tend to reduce `location` *entropy*, *induced models* cannot eliminate it completely - 
 
 model|size|label entropy/size
 ---|---|---
@@ -1238,4 +1228,15 @@ model|size|label entropy/size
 71|1,000,000|0.383128
 72|1,000,000|0.349623
 
+It is likely that the persistence of  `location` *entropy* is due to the general uniformity of dimension and feature of the turtlebot house.
 
+#### Slice topology goals - modes 2,3 and 4
+
+Mode 2 is where the slice top is constructed at each act, but too slow.
+
+Mode 3 is slice only. Mode 4 is slice-location.
+
+This shows the decline in *label entropy* for the *level* 2 *model*,
+
+
+local goal versus global - slice top translates a global goal to a local neighbourhood preference
