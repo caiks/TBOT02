@@ -1132,9 +1132,9 @@ This suggests that the environment yields lower *fud alignments* at the margin. 
 
 Given that the *likelihood* of dynamic *modelling* is usually not much less than the *likelihood* of static *modelling*, we can be fairly certain that had we implemented the modes of `TBOT02` in the same way as in `TBOT01` we would have had similar results. 
 
-In `TBOT02` mode 1 we have tried a different approach in order to explore goal definition a little further. All of the `TBOT01` modes relied on the *variable* `room_next` with *values* `room1`, `room2`, `room3`, `room4`, `room5` and `room6`. These *values* do not give us any idea of the distance to the next room, measured either by the number of *events* or by the number of *slice* transitions. All we can do is select the *events* in the current *slice* with the desired `room_next` *value*, and then  of this subset choose the `motor` *value* with the highest *count*.
+In `TBOT02` mode 1, however, we have tried a different approach in order to explore goal definition a little further. All of the `TBOT01` modes relied on the *variable* `room_next` with *values* `room1`, `room2`, `room3`, `room4`, `room5` and `room6`. These *values* do not give us any idea of the distance to the next room, measured either by the number of *events* or by the number of *slice* transitions. All we can do is select the *events* in the current *slice* with the desired `room_next` *value*, and then  of this subset choose the `motor` *value* with the highest *count*.
 
-In `TBOT02` we add the concept of distance to the next room measured as the number of *events* from each *event* in the current *slice* to the room transition. Furthermore, we discount distant transitions so that short past journeys to the desired next room contribute more than long journeys. Of course, the move from the discrete *count* of desired *events* in the current *slice* to a real valued measure of future outcomes adds many more options, such as the discount rate.
+In `TBOT02` mode 1 we add the concept of distance to the next room measured as the number of *events* from each *event* in the current *slice* to the room transition. Furthermore, we discount distant transitions so that short past journeys to the desired next room contribute more than long journeys. Of course, the move from the discrete *count* of desired *events* in the current *slice* to a real valued measure of future outcomes adds many more options, such as the discount rate.
 
 The multitude of possible discounting configuration options and the fact that both the active *history* and the active *model* are always changing in the dynamic `TBOT02` means that the results are much less consistent than for `TBOT01`. However, it does appear that the results of some configurations of various *models* do approach those of `TBOT01` *model* 27. For example *model* 62 -
 ```json
@@ -1231,6 +1231,16 @@ model|size|label entropy/size
 It is likely that the persistence of  `location` *entropy* is due to the general uniformity of dimension and feature of the turtlebot house.
 
 #### Slice topology goals - modes 2,3 and 4
+
+In `TBOT02` mode 1 the turtlebot achieved its global goal by moving through a series of local goals (next room). The distance to the local goal was measured as the number of *events* from each *event* in the current *slice* to the room transition. In modes 2,3 and 4 we change the definition of both the local goal and the measure. Both are now defined in terms of what we loosely call a *slice* topology. We can think of each *slice* as a set of *events* that corresponds roughly to a particular bounded and oriented area of the turtlebot house. These areas arrange themselves contiguously to cover the turtlebot's explorations of the house. So a *slice* topology is a sort of map of the pathways through the physical environment formed by the past movements of the agent. As the turtlebot navigates it will step through one or more *events* within its current *slice* until it transitions to the next *slice*. The next *slice* depends on the actions in the current *slice*. Thus, there is a neighbourhood of *slices* 'surrounding' each *slice*. Each of the neighbours has in turn its own set of neighbours and so on, forming a directed graph where the vertices are *slices* and the edges are *slice* transitions.
+
+global goal and subset of neighbours
+
+good topology - all possible neighbours and therefore complete connectivity.
+
+Of course, the *events* of a *slice* may well not have occured in just one area. If the `location` *entropy* is non-zero then there must be some *slices* that have *events* in differing areas of the house. 
+
+Firstly the goal is no longer the next room transition that leads to the ultimate goal (as set by the commander sequence). 
 
 Mode 2 is where the slice top is constructed at each act, but too slow.
 
