@@ -1230,6 +1230,46 @@ model|size|label entropy/size
 
 It is likely that the persistence of  `location` *entropy* is due to the general uniformity of dimension and feature of the turtlebot house.
 
+We considered if the `location` *entropy* could be reduced by adding time-wise *frames* in a third *level*. *Model* 69 has structure `struct002` -
+```json
+{
+	"update_interval" : 20,
+	"act_interval" : 500,
+	"bias_interval" : 10000,
+	"structure" : "struct002",
+	"model_initial" : "model061",
+	"structure_initial" : "struct001",
+	"model" : "model069",
+	"summary_level1" : true,
+	"summary_level2" : true,
+	"summary_level3" : true
+}
+```
+Run the simulation -
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
+cd ~/turtlebot3_ws/src/TBOT02_ws
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env013.model -s libgazebo_ros_init.so
+```
+Run the actor -
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 actor model069.json
+
+```
+The resultant *entropies* are as follows -
+
+model|frames|size|label entropy/size
+---|---|---|---
+69|0|321,817|1.22497
+69|1|321,817|0.98916
+69|2|321,817|1.09392
+69|3|321,817|1.26323
+69|4|321,817|1.1324
+69|5|321,817|1.21634
+
+Although the number of *fuds* per *size* per *induce* threshold may have been slightly higher than for the two *level* *models* in some cases, the `location` *entropy* is much higher. This is as we might expect because the time-wise *alignments* are more related to the dynamic physics rather than the static physics.
+
 #### Slice topology goals - modes 2,3 and 4
 
 In `TBOT02` mode 1 the turtlebot achieved its global goal by moving through a series of local goals, where the local goal was defined as the next room. The distance to the local goal was measured as the number of *events* from each *event* in the current *slice* to the room transition. In modes 2,3 and 4 we change the definition of both the local goal and the measure. Both are now defined in terms of what we loosely call a *slice* topology. 
@@ -1244,7 +1284,9 @@ A disadvantage of a *slice* topology is that the *slices* are sometimes ambiguou
 
 Another disadvantage is that the *slices* are sometimes spread out and so the transitions are sensitive to the timing of the actions within them. 
 
-Mode 2 is where the slice top is constructed at each act, but too slow.
+The first of the `TBOT02` *slice* topology modes is mode 2. There is no caching at startup, so everything is re-calculated at each act. First, the modal or most frequent `location` is determined for each active *slice*. Next the *slice* topology is calculated, but considering only those *slice* transitions that occur between *events* in their modal `location`. Then the global goal *slice* set is calculated as the subset of active *slices* where the modal `location` is the desired goal room. Then, for each *slice* in the immediate neighbourhood, the number of transitions in the shortest path to the goal *slices* is calculated. Then, for the subset of the neighbourhood that has the fewest transitions, the *histogram* of `motor` is calculated. Finally the action is selected either probabilistically or deterministically (by selecting the modal *value*). 
+
+
 
 Mode 3 is slice only. Mode 4 is slice-location.
 
