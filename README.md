@@ -217,6 +217,8 @@ Now let us investigate various turtlebot *models* and controllers.
 
 [Actor node](#Actor)
 
+[Conclusion](#Conclusion)
+
 <a name = "Dynamic"></a>
 
 ### Dynamic modelling
@@ -316,7 +318,7 @@ Actives are designed to process chronological streams of *events*. The past *eve
 
 Given the current *slice*, the active *underlying history* enables us to look forward from each of the past *events* of the *slice* to see the succeeding *events*. We can therefore determine the consequences of different actions. For example, given some definition of a goal, we can calculate a goodness for each *value* of the action *variable*. We do this by selecting the subset of the *events* of the *slice* having that action *value* and then for each *event* discounting by the time taken to the attainment of the goal. The sum forms the goodness for that action *value*. In this way we can choose the present motor action that is expected to be the quickest to obtain the goal, based on the *model's classification* of past experiences.
 
-Instead of determining the number of *events* to reach a goal *event*, and then choosing an action accordingly, we can count the number of *slice* transitions to reach a goal *slice*. A *slice* transition occurs whenever the *slice* of the current *event* is different from the *slice* of the previous *event*. We count the number of *slice* transitions to goal *slice* for each of the *slices* neighbouring the current *slice*. Then we choose the action most likely to take us to the neighbour *slice* which has the fewest *slice* transistions to goal. That is, using the *slice* topology we can determine which of our neighbours is nearest to our goal. In this way, obtaining a global goal requires only a series of local decisions. The advantage of this method is that the goal *slice* can be many *slice* transitions away, but a continuous sequence of *events* is not required, only a continuous sequence of *slice* transitions. 
+Instead of determining the number of *events* to reach a goal *event*, and then choosing an action accordingly, we can count the number of *slice* transitions to reach a goal *slice*. A *slice* transition occurs whenever the *slice* of the current *event* is different from the *slice* of the previous *event*. We count the number of *slice* transitions to goal *slice* for each of the *slices* neighbouring the current *slice*. Then we choose the action most likely to take us to the neighbour *slice* which has the fewest *slice* transitions to goal. That is, using the *slice* topology we can determine which of our neighbours is nearest to our goal. In this way, obtaining a global goal requires only a series of local decisions. The advantage of this method is that the goal *slice* can be many *slice* transitions away, but a continuous sequence of *events* is not required, only a continuous sequence of *slice* transitions. 
 
 Now let us consider what the *induce slice* threshold should be. We *induced* a *fud* on a *history* of increasingly large *sizes* taken from the beginning of the random region *substrate* formed by `data009`, and calculated the *implied diagonal valency percent* and the *likelihood* of each,
 ```
@@ -1155,6 +1157,7 @@ Run the simulation -
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
 cd ~/turtlebot3_ws/src/TBOT02_ws
 gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env012.model -s libgazebo_ros_init.so
+
 ```
 Run the actor -
 ```
@@ -1196,7 +1199,7 @@ goal: room6     n: 468  mean: 1388.12   std dev: 1359.19        std err: 62.8286
 goal: room5     n: 469  mean: 1401.34   std dev: 1387.51        std err: 64.0693        running mean: 1408.4    running std dev: 2092.44        running std err: 661.688
 ```
 
-This is the summary for mode 1, with random mode of `TBOT01` as a baseline -
+This is the summary for mode 1, with the random mode of `TBOT01` as a baseline -
 
 model|mode|rooms|mean|std err
 ---|---|---|---|---
@@ -1219,6 +1222,7 @@ model|size|label entropy/size
 ---|---|---
 61|258,581|0.71099
 65|370,181|0.668522
+73|946,931|0.651033
 69|431,243|0.610491
 67|525,414|0.609749
 66|540,699|0.595765
@@ -1250,6 +1254,7 @@ Run the simulation -
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
 cd ~/turtlebot3_ws/src/TBOT02_ws
 gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env013.model -s libgazebo_ros_init.so
+
 ```
 Run the actor -
 ```
@@ -1278,11 +1283,13 @@ We can think of each *slice* as a set of *events* that corresponds roughly to a 
 
 Now let us redefine the global goal as a subset of the topology's *slices*. In the case of `TBOT02` the goal is the set of *slices* that correspond to a room in the turtlebot house. For each of the immediate neighbour *slices* of the turtlebot's current *slice* we can calculate the minimum number of *slice* transitions or edges to reach any of the goal *slices*. We can then define the local goal as the subset of the neighbours that have the fewest transitions to global goal. The measure is now the number of *slice* transitions from local goal to global goal, rather than the number of *events* from the current *slice's events* to local goal. Finally we choose the action or actions that previously led the turtlebot to move from the current *slice* to any of this shortest-path subset of the neighbours. Once the turtlebot has transitioned to a new *slice*, whether it be in this shortest-path neighbourhood or not, a new shortest-path neighbourhood is calculated, and the process is repeated until one of the global goal *slices* is reached. If the *slice* topology is representative, complete and connected enough to yield a preferred subset of neighbours for most *slices*, then the turtlebot will tend to have better than random journey times to global goal, depending on how much the next *slice* is determined by transition action.
 
-The advantage of a *slice* topology is that the turtlebot only needs to have previously travelled to the next *slice*, and not to, say, the next room. That is, the local goal is nearer and therefore the chosen actions are more successful. Past journeys need only intersect at *slices* rather than less common local goals. The best topologies approximate closely to the physical configuration space and affordances, with diverse neighbourhoods and complete connectivity.
+The advantage of a *slice* topology is that the turtlebot only needs to have previously travelled from here to the next *slice*, and not to, say, the next room. So the local goal is nearer and therefore the chosen actions are more successful. Past journeys need only intersect at *slices* rather than less common local goals. The best topologies approximate closely to the physical configuration space and affordances, with diverse neighbourhoods and complete connectivity.
 
-A disadvantage of a *slice* topology is that the *slices* are sometimes ambiguous with respect to goal label. The *events* of a *slice* may have occured in more than one physical area. In the case of `TBOT02` the same *slice* might be in two different rooms, or in different places or orientations in the same room. If the label *entropy* is non-zero then there may be some *slices* that have *events* in non-contiguous areas of the physical configuration space. That is, *slice* topology label errors will sometimes make transitions that are phyically impossible - wormholes or the distortions of surrealism or cubism. For example, if the global goal *slices* have label *entropy* then the shortest-path may be incorrect. In general, label *entropy* increases false connectivity, decreasing the number of transistions to goal and enlarging the local neighbourhood.
+A disadvantage of a *slice* topology is that the *slices* are sometimes ambiguous with respect to goal label. The *events* of a *slice* may have occured in more than one physical area. In the case of `TBOT02` the same *slice* might be in two different rooms, or in different places or orientations in the same room. If the label *entropy* is non-zero then there may be some *slices* that have *events* in non-contiguous areas of the physical configuration space. That is, *slice* topology label errors will sometimes make transitions that are phyically impossible - wormholes or the distortions of surrealism or cubism. For example, if the global goal *slices* have label *entropy* then the shortest-path may be incorrect. In general, label *entropy* increases false connectivity, decreasing the number of transitions to goal and enlarging the local neighbourhood.
 
 Another disadvantage is that the *slices* are sometimes spread out and so the transitions are sensitive to the timing of the actions within them. Mode 4, below, deals with this by grouping actions by the number of *events* since entering the current *slice*.
+
+##### Mode 2
 
 The first of the `TBOT02` *slice* topology modes is mode 2. There is no caching at startup, so everything is re-calculated at each act. First, the modal or most frequent `location` is determined for each active *slice*. Next the *slice* topology is calculated, but considering only those *slice* transitions that occur between *events* in their modal `location`. Then the global goal *slice* set is calculated as the subset of active *slices* where the modal `location` is the desired goal room. Then, for each *slice* in the immediate neighbourhood, the number of transitions in the shortest path to the goal *slices* is calculated. Then, for the subset of the neighbourhood that has the fewest transitions, the *histogram* of `motor` is calculated. Finally the action is selected either probabilistically or deterministically (by selecting the modal *value*). 
 
@@ -1303,6 +1310,7 @@ Run the simulation -
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
 cd ~/turtlebot3_ws/src/TBOT02_ws
 gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env009.model -s libgazebo_ros_init.so
+
 ```
 Run the actor -
 ```
@@ -1310,12 +1318,146 @@ cd ~/turtlebot3_ws/src/TBOT02_ws
 ros2 run TBOT02 actor actor.json
 
 ```
-There are many problems with this first attempt at a *slice* topology. One problem is that the computation of the model `location` for each *slice* and the entire *slice* topology are computationally intensive, so causing the acts to lag. The main problem, however, is that, even using the modal *slice* `location`, the high `location` *entropy* creates a lot of non-physical connectivity, shortening paths to goal and selecting the incorrect local goal neighbourhood.
+There are many problems with this first attempt at a *slice* topology. One problem is that the computation of the model `location` for each *slice* and the computation of the entire *slice* topology are computationally intensive, so causing the acts to lag. The main problem, however, is that, even using the modal *slice* `location`, the high `location` *entropy* creates a lot of non-physical connectivity, shortening paths to goal and selecting the incorrect local goal neighbourhood.
 
-Mode 3 is very similar to mode 2. The main differences are firstly that it does not ignore non-modal *slice* connections and secondly that it caches the modal `locations` and *slice* topology at startup. The caching improves performance, but the cached structures are no updated, so gradually go out of data. Overall the differnces did not solve the problems seen in mode 2.
+##### Mode 3
+
+Mode 3 is very similar to mode 2. The main differences are firstly that it no longer ignores non-modal *slice* connections, and secondly that it caches the modal `locations` and *slice* topology at startup. The caching improves performance, but the cached structures are not updated, so they gradually go out of date, even with induce disabled. Overall the differences did not solve the problems seen in mode 2. In fact, even when we started with the very large *model* 72, with a label *entropy* per *size* of only 0.35, the topology was too weak to prevent the turtlebot becoming trapped in a room for very long periods - 
+```json
+{
+	"update_interval" : 5,
+	"act_interval" : 60,
+	"bias_interval" : 1250,
+	"no_induce" : true,
+	"structure" : "struct001",
+	"model_initial" : "model072",
+	"mode" : "mode003",
+	"warning_action" : true,
+	"mode_logging" : false
+}
+```
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
+cd ~/turtlebot3_ws/src/TBOT02_ws
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env012.model -s libgazebo_ros_init.so
+
+```
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 actor actor.json
+
+```
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 commander room5 60 17 50
+
+```
+```
+goal: room2     n: 1    mean: 137       std dev: 0      std err: 0      running mean: 137       running std dev: 0      running std err: 0
+goal: room6     n: 2    mean: 2540.5    std dev: 2403.5 std err: 1699.53        running mean: 2540.5    running std dev: 2403.5 running std err: 1699.53
+goal: room2     n: 3    mean: 30290     std dev: 39292.8        std err: 22685.7        running mean: 30290     running std dev: 39292.8        running std err: 22685.7
+goal: room6     n: 4    mean: 25555     std dev: 35002.9        std err: 17501.4        running mean: 25555     running std dev: 35002.9        running std err: 17501.4
+```
+##### Mode 4
+
+Mode 4 makes a significant departure from the other modes. Here we recognise that even a very large *induced model* has too much `location` *entropy* to demonstrate convincingly that a *slice* topology can work in practice. Rather than adding the `location` *variable* to the *substrate* for *modelling* and hoping that the *alignments* with the lidar sensor data are enough to eliminate the *entropy*, we add `location` directly to the *slice* topology. That is, the vertices in our directed graph are now pairs of *slice* and `location` *variable*, and transitions occur if either the *slice* or the `location` has changed. We assume that the turtlebot always knows its `location`. This has the effect of mapping the topology much more closely to the physical configuration space. The goal *slice*-`location` set no longer needs to rely on the modal `location` in the *slice*, but is always exactly correct. The count of transitions in the shortest path from local *slice*-`location` to the global goal *slice*-`location` set becomes much more realistic, and the corresponding shortest-path neighbourhood now provides a useful basis for the actions.
+
+The implementation of mode 4 is similar to that of mode 3, with much of the processing done at startup and *induction* disabled. Mode 4 experiments with various ways of choosing the action. The best results were for the 'stepwise' version. Here the actions are grouped by the number of *events* since the turtlebot entered the current *slice*-`location`. The correct action is usually to continue straight ahead so in many *slices* there are several steps before a turn is made. Also there was some experimenting with the lag between the initiation of the action and the transition into a new *slice*.
+
+The fastest results were initialised with *model* 73, which was configured with more turns, larger *slices* and a bigger *model* than the other initial *models* -
+```json
+{
+	"update_interval" : 5,
+	"act_interval" : 62,
+	"bias_interval" : 620,
+	"turn_interval" : 620,
+	"activeSizeLevel1" : 30000,
+	"induceIntervalLevel1" : 250,
+	"induceThresholdInitial" : 3000,
+	"induceThreshold" : 300,
+	"induce_interval" : 250,
+	"structure" : "struct001",
+	"model" : "model073",
+	"summary_level1" : true,
+	"summary_level2" : true,
+	"warning_action" : true
+}
+```
+The label *entropy* is quite high for this *model* at 0.65, but that does not matter now that the topology includes the label.
+
+This the configuration for the mode 4 run -
+```json
+{
+	"update_interval" : 5,
+	"act_interval" : 60,
+	"bias_interval" : 1250,
+	"no_induce" : true,
+	"structure" : "struct001",
+	"model_initial" : "model073",
+	"mode" : "mode004",
+	"probabilistic" : true,
+	"multiple_transition" : true,
+	"stepwise" : true,
+	"lag" : 0,
+	"warning_action" : true,
+	"mode_logging" : true
+}
+```
+```
+export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
+cd ~/turtlebot3_ws/src/TBOT02_ws
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env012.model -s libgazebo_ros_init.so
+
+```
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 actor actor.json
+
+```
+```
+cd ~/turtlebot3_ws/src/TBOT02_ws
+ros2 run TBOT02 commander room5 60 17 50
+
+```
+```
+goal: room6     n: 266  mean: 2170.95   std dev: 3025.1 std err: 185.481        running mean: 2368.72   running std dev: 2943.47        running std err: 416.27
+goal: room1     n: 267  mean: 2164.61   std dev: 3021.2 std err: 184.894        running mean: 2375.26   running std dev: 2938.9 running std err: 415.623
+goal: room4     n: 268  mean: 2159.47   std dev: 3016.73        std err: 184.276        running mean: 2373.38   running std dev: 2939.88        running std err: 415.762
+goal: room1     n: 269  mean: 2151.54   std dev: 3013.91        std err: 183.761        running mean: 2356.66   running std dev: 2950.78        running std err: 417.304
+```
+We can add this to the summary results for modes 1 and 4, with the random mode of `TBOT01` as a baseline -
+
+initial model|model|mode|rooms|mean|std err
+---|---|---|---|---|---
+-|TBOT01|random|55|3129|454
+61|62|1|469|1401|64
+61|63|1|195|1553|113
+61|64|1|64|1332|166
+61|64|1|67|2172|315
+-|65|1|125|2516|253
+-|65|1|115|3215|375
+65|66|1|76|1236|112
+65|66|1|115|1479|138
+65|67|1|98|1559|166
+65|68|1|82|1386|125
+65|68|1|89|1680|208
+73|-|4|269|2151|183
+
+We can see that mode 4 is significantly better than random, although usually considerably slower than mode 1. To find out more about its behaviour we can gather some statistics. 
+
+First we can calculate what fraction of the *slice*-`location` transitions were to one of the known immediate neighbours. In the example above we find that 42.6% moved to a known neighbour. This figure is surprisingly low given the large active *size*, but it shows that the topology is, at best, only an approximate map of the physical environment. Note that even if the turtlebot did not transition in a known way, it might still have made the correct choice of action to obtain the local goal.
+
+Of the 42.6% that did move to a known neighbour, we can calculate how many moved to one of the shortest-path subset of the neighbours. In this case it is 14.7%. To render this figure meaningful we calculate what fraction of the neighbourhood is in the shortest-path subset. This 'expected' rate is 13.1%. So we estimate the overall action success fraction as only `(14.7 - 13.1) / 0.426 = 3.7`%. This rather low fraction tells us that the response to the chosen `motor` *value* is only very weak, more of a drift or a tendency. This explains why the performance of `TBOT02` mode 4, though significant, is not very impressive.
+
+<a name = "Conclusion"></a>
+
+### Conclusion
+
+Discuss the improvements to performance in `TBOT03`, especially focusing on the action responsiveness, topology connectivity and completeness, model likelihood.
 
 
 
 
-Mode 4 is slice-location.
+
+
 
