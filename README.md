@@ -1453,7 +1453,17 @@ Of the 42.6% that did move to a known neighbour, we can calculate how many moved
 
 ### Conclusion
 
+`TBOT02` has demonstrated the practicality of two major changes from `TBOT01`. 
+
+Firstly, active *modelling* processes *events* in real-time with moderate compute and finite memory requirements, while maintaining high *model likelihoods*. The active framework can concurrently manage multiple *models* structured in different *levels*. Higher *levels* can include time-wise underlying and reflexive *frames*. The active *histories*, which are required for *induction*, also allow analysis of the temporal relations near past *events* e.g. to create *slice* topologies (see below), or to make predictions, or to manage action distributions.
+
+Secondly, *slice* topologies provide a mechanism for exploration and control. They increase the effectiveness of actions by replacing distant global goals with realistic local goals. They do not require much parameterisation. With updated cached structures they can process actions in real-time.
+
+`TBOT02` has the same limitations as `TBOT01` with respect to label *entropy*. This is a consequence of *induced modelling*. The solution to this is either to expand the *history* or *substrate* sufficiently to detect *alignments* with the label, or else add the label to the *slice* topology directly.
+
 Discuss the improvements to performance in `TBOT03`, especially focusing on the action responsiveness, topology connectivity and completeness, model likelihood.
+
+random mode and interest mode
 
 
 
