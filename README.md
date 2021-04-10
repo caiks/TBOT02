@@ -1453,17 +1453,21 @@ Of the 42.6% that did move to a known neighbour, we can calculate how many moved
 
 ### Conclusion
 
-`TBOT02` has demonstrated the practicality of two major changes from `TBOT01`. 
+`TBOT02` has demonstrated the practicality of two major advances from `TBOT01`. 
 
-Firstly, active *modelling* processes *events* in real-time with moderate compute and finite memory requirements, while maintaining high *model likelihoods*. The active framework can concurrently manage multiple *models* structured in different *levels*. Higher *levels* can include time-wise underlying and reflexive *frames*. The active *histories*, which are required for *induction*, also allow analysis of the temporal relations near past *events* e.g. to create *slice* topologies (see below), or to make predictions, or to manage action distributions.
+First, active *modelling* can process *events* in real-time with moderate compute and finite memory requirements, while maintaining high *model likelihoods*. The active framework can concurrently manage multiple *models* structured in different *levels*. Higher *levels* can include time-wise *underlying* and reflexive *frames*. The active *histories*, which are necessary for *induction*, also allow analysis of the temporal relations near past *events*, e.g. to create *slice* topologies (see below), or to make predictions, or to manage action distributions.
 
-Secondly, *slice* topologies provide a mechanism for exploration and control. They increase the effectiveness of actions by replacing distant global goals with realistic local goals. They do not require much parameterisation. With updated cached structures they can process actions in real-time.
+Second, *slice* topologies provide a mechanism for exploration and control. They increase the effectiveness of actions by replacing distant global goals with realistic local goals. They do not require much parameterisation. With updated cached structures they can process actions in real-time.
 
-`TBOT02` has the same limitations as `TBOT01` with respect to label *entropy*. This is a consequence of *induced modelling*. The solution to this is either to expand the *history* or *substrate* sufficiently to detect *alignments* with the label, or else add the label to the *slice* topology directly.
+`TBOT02` has the same limitations as `TBOT01` with respect to label *entropy*. This is a consequence of *induced modelling*. The solution to this is either to expand the *history* or *substrate* sufficiently to detect *alignments* with the label, or else add the label to the *slice* topology directly. Of course, that means that the current label cannot be the goal since it must be known, but some future label can still be the goal.
 
-Discuss the improvements to performance in `TBOT03`, especially focusing on the action responsiveness, topology connectivity and completeness, model likelihood.
+The implementation of *slice* topologies in `TBOT02` only had a low action success rate. In `TBOT03` we will seek to improve this performance by considering the factors that increase  *model likelihood*, *slice* topology connectivity and completeness, and action responsiveness. 
 
-random mode and interest mode
+As well as the `location` goal mode of `TBOT02`, we will consider two more modes in `TBOT03`, both of which will be implemented using *slice* topologies. 
+
+First, 'random' mode acts to match the `motor` *histogram* for each *slice* to a desired uniform distribution. In this way the turtlebot will systematically explore the physical configuration, so improving the *slice* topology's representation. 'Random' mode is used in the configuration *level*, which is defined as the *level* that acts on the motor *variables*.
+
+Second, 'interest' mode acts to move towards the *slice* with the *size* nearest to the *induction* threshold. The turtlebot therefore will spend more time in the *slices* with the highest potential for *modelling* so far undetected *alignments*, thus improving the *model likelihood* per active *history size*. This is similar to static *induction* in which the largest *slice* is *induced* first. 'Interest' mode can be used at any *level*. The goal *slice* of a higher *level* implies a set of goal *slices* in the configuration *level*, recursing through any intermediate *underlying* *levels*. The interests of different actives may sometimes be contradictory, so some method of coordinating between them will be needed.
 
 
 
