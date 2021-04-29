@@ -2877,6 +2877,10 @@ int main(int argc, char **argv)
 				TRUTH(activeC.historyOverflow);				
 				EVAL(activeB.historyEvent);				
 				EVAL(activeC.historyEvent);		
+				TRUTH(activeB.continousIs);				
+				TRUTH(activeC.continousIs);		
+				EVAL(activeB.continousHistoryEventsEvent);				
+				EVAL(activeC.continousHistoryEventsEvent);					
 				{
 					for (auto& hr : activeB.underlyingHistoryRepa)
 					{
@@ -4480,6 +4484,308 @@ int main(int argc, char **argv)
 			EVAL(sorted(*frund(*er->fud)));
 		}
 
+	}
+	
+	if (argc >= 3 && string(argv[1]) == "induce09")
+	{
+		auto hrsel = [](const HistoryRepa& hr, std::size_t ev)
+		{
+			SizeList ll {ev};
+			return eventsHistoryRepasHistoryRepaSelection_u(ll.size(), (std::size_t*)ll.data(), hr);
+		};
+		auto erdr = applicationRepasDecompFudSlicedRepa_u;
+		
+		string model = string(argv[2]);
+		string dataset = string(argc >= 4 ? argv[3] : "data009");
+		
+		EVAL(model);
+		EVAL(dataset);
+		
+		std::unique_ptr<System> uu;
+		std::unique_ptr<SystemRepa> ur;
+		std::unique_ptr<HistoryRepa> hr;
+		{
+			std::ifstream in(dataset+".bin", std::ios::binary);
+			auto qq = persistentsRecordList(in);
+			in.close();
+			auto xx = recordListsHistoryRepa_4(8, *qq);
+			uu = std::move(std::get<0>(xx));
+			ur = std::move(std::get<1>(xx));
+			hr = std::move(std::get<2>(xx));
+		}
+		EVAL(hr->size);
+		EVAL(ur->listVarSizePair.size());
+		
+		{
+			auto eventsA = std::make_shared<ActiveEventsRepa>(2);
+			
+			auto systemA = std::make_shared<ActiveSystem>();
+			
+			Active activeA("activeA");
+			activeA.system = systemA;
+			activeA.historySize = 10;
+			activeA.continousIs = true;			
+			activeA.logging = true;
+			{
+				StrVarPtrMap m;
+				std::ifstream in(model + ".dr", std::ios::binary);
+				auto ur = persistentsSystemRepa(in, m);
+				activeA.decomp = erdr(*persistentsApplicationRepa(in));
+				in.close();		
+				systemA->block = activeA.decomp->varMax() >> systemA->bits;
+			}
+			activeA.var = systemA->next(activeA.bits);
+			EVAL(activeA.var);
+			activeA.varSlice = systemA->next(activeA.bits);
+			EVAL(activeA.varSlice);
+			activeA.underlyingEventsRepa.push_back(eventsA);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					auto vscan = std::make_shared<Variable>("scan");
+					for (int i = 0; i < 360; i++)
+						vv0.push_back(mm[Variable(vscan, std::make_shared<Variable>((i % 360) + 1))]);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					memset(rr1, 0, z1*n1);			
+				}
+				activeA.underlyingHistoryRepa.push_back(hr1);
+			}
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeA.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeA.historySparse = std::move(hr);			
+			}
+			activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+
+			Active activeB("activeB");
+			activeB.system = systemA;
+			activeB.var = systemA->next(activeB.bits);
+			EVAL(activeB.var);
+			activeB.varSlice = systemA->next(activeB.bits);
+			EVAL(activeB.varSlice);
+			activeB.historySize = 10;
+			activeB.continousIs = true;			
+			activeB.induceThreshold = 5;
+			activeB.logging = true;
+			activeB.decomp = std::make_unique<DecompFudSlicedRepa>();
+			activeB.underlyingEventsRepa.push_back(eventsA);
+			{
+				SizeList vv0;
+				{
+					auto& mm = ur->mapVarSize();
+					vv0.push_back(mm[Variable("motor")]);
+					vv0.push_back(mm[Variable("location")]);
+				}
+				auto hr1 = std::make_shared<HistoryRepa>();
+				{
+					auto n = hr->dimension;
+					auto vv = hr->vectorVar;
+					auto sh = hr->shape;
+					auto& mvv = hr->mapVarInt();
+					auto n1 = vv0.size();
+					hr1->dimension = n1;
+					hr1->vectorVar = new std::size_t[n1];
+					auto vv1 = hr1->vectorVar;
+					hr1->shape = new std::size_t[n1];
+					auto sh1 = hr1->shape;
+					for (std::size_t i = 0; i < n1; i++)
+					{
+						auto v = vv0[i];
+						vv1[i] = v;
+						sh1[i] = sh[mvv[v]];
+					}
+					hr1->evient = true;
+					hr1->size = activeA.historySize;
+					auto z1 = hr1->size;
+					hr1->arr = new unsigned char[z1*n1];
+					auto rr1 = hr1->arr;
+					memset(rr1, 0, z1*n1);			
+				}
+				activeB.underlyingHistoryRepa.push_back(hr1);
+			}
+			activeB.underlyingEventsSparse.push_back(activeA.eventsSparse);
+			activeB.underlyingHistorySparse.push_back(std::make_shared<HistorySparseArray>(activeB.historySize,1));
+			{
+				auto hr = std::make_unique<HistorySparseArray>();
+				{
+					auto z = activeB.historySize;
+					hr->size = z;
+					hr->capacity = 1;
+					hr->arr = new std::size_t[z];		
+				}		
+				activeB.historySparse = std::move(hr);			
+			}
+			activeB.eventsSparse = std::make_shared<ActiveEventsArray>(1);
+			
+			bool ok = true;
+						
+			for (std::size_t i = 0; i < 2; i++) 
+				eventsA->mapIdEvent[i] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
+	
+			ECHO(ok = activeA.update(ActiveUpdateParameters()));
+			TRUTH(ok);
+
+			ECHO(ok = activeB.update(ActiveUpdateParameters()));
+			TRUTH(ok);
+
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);
+			ECHO(ok = activeB.induce(ActiveInduceParameters()));
+			TRUTH(ok);
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);	
+			
+			for (std::size_t i = 2; i < 6; i++) 
+				eventsA->mapIdEvent[i*2] = HistoryRepaPtrSizePair(std::move(hrsel(*hr,i)),eventsA->references);
+	
+			ECHO(ok = activeA.update(ActiveUpdateParameters()));
+			TRUTH(ok);
+
+			ECHO(ok = activeB.update(ActiveUpdateParameters()));
+			TRUTH(ok);
+
+			auto inducePost = [](Active& active, std::size_t sliceA, std::size_t sliceSizeA)
+			{
+				std::cout << "sliceA: " << sliceA << std::endl;
+				std::cout << "sliceSizeA: " << sliceSizeA << std::endl;
+				return true;
+			};
+			
+			activeB.induceCallback = inducePost;
+			// EVAL(sorted(activeB.underlyingSlicesParent));
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);
+			EVAL(activeB.frameUnderlyings);
+			EVAL(activeB.frameHistorys);
+			EVAL(activeB.framesVarsOffset);
+			ECHO(ok = activeB.induce(ActiveInduceParameters()));
+			TRUTH(ok);
+			EVAL(activeB.historySlicesSetEvent);
+			EVAL(activeB.induceSlices);	
+			
+			if (false)
+			{
+				EVAL(activeA.historySlicesSetEvent);
+				EVAL(activeB.induceSlices);
+				ActiveInduceParameters ppi;
+				ppi.znnmax = 0;
+				ppi.bmax = 2;
+				ECHO(ok = activeB.induce(ppi));
+				TRUTH(ok);
+				EVAL(activeA.historySlicesSetEvent);
+				EVAL(activeB.induceSlices);	
+			}
+			
+			if (true)
+			{
+				activeB.frameUnderlyings = SizeSet{1,2,3};
+				activeB.frameHistorys = SizeSet{4,5};
+				activeB.framesVarsOffset[1][2] = 3;
+				activeB.framesVarsOffset[1][4] = 5;
+				activeB.framesVarsOffset[2][6] = 7;
+				ActiveIOParameters pp;
+				pp.filename = "test.bin";
+				ECHO(ok = activeB.dump(pp));
+				TRUTH(ok);				
+				Active activeC("activeC");
+				activeC.logging = true;
+				activeC.historyOverflow = true;
+				ECHO(ok = activeC.load(pp));
+				TRUTH(ok);				
+				EVAL(activeB.name);				
+				EVAL(activeC.name);				
+				EVAL(activeB.underlyingEventUpdateds);				
+				EVAL(activeC.underlyingEventUpdateds);				
+				EVAL(activeB.historySize);				
+				EVAL(activeC.historySize);				
+				TRUTH(activeB.historyOverflow);				
+				TRUTH(activeC.historyOverflow);				
+				EVAL(activeB.historyEvent);				
+				EVAL(activeC.historyEvent);		
+				TRUTH(activeB.continousIs);				
+				TRUTH(activeC.continousIs);		
+				EVAL(activeB.continousHistoryEventsEvent);				
+				EVAL(activeC.continousHistoryEventsEvent);					
+				{
+					for (auto& hr : activeB.underlyingHistoryRepa)
+					{
+						EVAL(*hr);				
+					}
+					for (auto& hr : activeC.underlyingHistoryRepa)
+					{
+						EVAL(*hr);				
+					}
+				}	
+				{
+					for (auto& hr : activeB.underlyingHistorySparse)
+					{
+						EVAL(*hr);				
+					}
+					for (auto& hr : activeC.underlyingHistorySparse)
+					{
+						EVAL(*hr);				
+					}
+				}				
+				EVAL(sorted(activeB.underlyingSlicesParent));				
+				EVAL(sorted(activeC.underlyingSlicesParent));	
+				EVAL(*activeB.decomp);				
+				EVAL(*activeC.decomp);				
+				EVAL(activeB.bits);				
+				EVAL(activeC.bits);				
+				EVAL(activeB.var);				
+				EVAL(activeC.var);				
+				EVAL(activeB.varSlice);				
+				EVAL(activeC.varSlice);				
+				EVAL(activeB.induceThreshold);				
+				EVAL(activeC.induceThreshold);				
+				EVAL(activeB.induceVarExclusions);				
+				EVAL(activeC.induceVarExclusions);				
+				if (activeB.historySparse) {EVAL(*activeB.historySparse);}				
+				if (activeC.historySparse) {EVAL(*activeC.historySparse);}			
+				EVAL(activeB.historySlicesSetEvent);				
+				EVAL(activeC.historySlicesSetEvent);				
+				EVAL(activeB.induceSlices);				
+				EVAL(activeC.induceSlices);				
+				EVAL(activeB.induceSliceFailsSize);				
+				EVAL(activeC.induceSliceFailsSize);				
+				EVAL(activeB.frameUnderlyings);				
+				EVAL(activeC.frameUnderlyings);				
+				EVAL(activeB.frameHistorys);				
+				EVAL(activeC.frameHistorys);				
+				EVAL(activeB.framesVarsOffset);				
+				EVAL(activeC.framesVarsOffset);				
+			}
+
+		}
 	}
 	
 	if (argc >= 3 && string(argv[1]) == "location_entropy")
