@@ -1223,7 +1223,7 @@ model|size|label entropy/size
 61|258,581|0.71099
 65|370,181|0.668522
 73|946,931|0.651033
-69|431,243|0.610491
+69|428,154|0.615338
 67|525,414|0.609749
 66|540,699|0.595765
 63|562,969|0.597108
@@ -1237,23 +1237,25 @@ We can see that increasing the active *size* and so increasing the number of *fu
 We considered if the `location` *entropy* could be reduced by adding time-wise *frames* in a third *level*. *Model* 69 has structure `struct002` -
 ```json
 {
-	"update_interval" : 20,
-	"act_interval" : 500,
-	"bias_interval" : 10000,
+	"update_interval" : 10,
+	"act_interval" : 125,
+	"induce_interval" : 1000,
+	"bias_interval" : 2500,
 	"structure" : "struct002",
 	"model_initial" : "model061",
 	"structure_initial" : "struct001",
 	"model" : "model069",
 	"summary_level1" : true,
 	"summary_level2" : true,
-	"summary_level3" : true
+	"summary_level3" : true,
+	"warning_action" : true
 }
 ```
 Run the simulation -
 ```
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:~/turtlebot3_ws/src/TBOT02_ws/gazebo_models
 cd ~/turtlebot3_ws/src/TBOT02_ws
-gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env013.model -s libgazebo_ros_init.so
+gazebo -u --verbose ~/turtlebot3_ws/src/TBOT02_ws/env011.model -s libgazebo_ros_init.so
 
 ```
 Run the actor -
@@ -1262,18 +1264,30 @@ cd ~/turtlebot3_ws/src/TBOT02_ws
 ros2 run TBOT02 actor model069.json
 
 ```
+These are the last log details for *model* 69 -
+```
+model069_2  induce summary  slice: 1718379  diagonal: 31.0598       fud cardinality: 4764   model cardinality: 67217        fuds per threshold: 1.11287
+model069_3_00       induce summary  slice: 1842709  diagonal: 26.7779       fud cardinality: 2286   model cardinality: 37852        fuds per threshold: 1.34964
+model069_3_01       induce summary  slice: 1967136  diagonal: 17.1611       fud cardinality: 2062   model cardinality: 34314        fuds per threshold: 1.21694
+model069_3_02       induce summary  slice: 2102823  diagonal: 34.7615       fud cardinality: 2169   model cardinality: 36479        fuds per threshold: 1.27937
+model069_3_03       induce summary  slice: 2235007  diagonal: 26.8556       fud cardinality: 2094   model cardinality: 35744        fuds per threshold: 1.23514
+model069_3_04       induce summary  slice: 2361813  diagonal: 25.4034       fud cardinality: 2366   model cardinality: 39226        fuds per threshold: 1.39748
+model069_3_05       induce summary  slice: 2491236  diagonal: 28.3073       fud cardinality: 2108   model cardinality: 34819        fuds per threshold: 1.24355
+```
+We find that the *level* three *models* all have considerably higher *fuds* per *size* per *induce* threshold than the *level* two *model*. This suggests that there are a lot of *alignments* in turtlebot's dynamics. Of the different arrangements of *frames*, the highest *likelihoods* are for *models* with *underlying frames* only. After that, spacing between *frames* of powers of two are better than Fibonacci series.
+
 The resultant *entropies* are as follows -
 
 model|frames|size|label entropy/size
 ---|---|---|---
-69|0|321,817|1.22497
-69|1|321,817|0.98916
-69|2|321,817|1.09392
-69|3|321,817|1.26323
-69|4|321,817|1.1324
-69|5|321,817|1.21634
+69|0|169,573|1.00096
+69|1|169,573|1.05255
+69|2|169,573|1.02055
+69|3|169,573|1.03751
+69|4|169,573|0.979562
+69|5|169,573|1.12249
 
-Although the number of *fuds* per *size* per *induce* threshold may have been slightly higher than for the two *level* *models* in some cases, the `location` *entropy* is much higher. This is as we might expect because the time-wise *alignments* are more related to the dynamic physics rather than the static physics.
+Although the number of *fuds* per *size* per *induce* threshold are better than for the *level* two *model* , the `location` *entropies* are worse. This is as we might expect because the time-wise *alignments* reflect the dynamic physics rather than the static physics of `location`.
 
 #### Slice topology goals - modes 2,3 and 4
 
