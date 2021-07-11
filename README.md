@@ -1372,6 +1372,9 @@ goal: room6     n: 2    mean: 2540.5    std dev: 2403.5 std err: 1699.53        
 goal: room2     n: 3    mean: 30290     std dev: 39292.8        std err: 22685.7        running mean: 30290     running std dev: 39292.8        running std err: 22685.7
 goal: room6     n: 4    mean: 25555     std dev: 35002.9        std err: 17501.4        running mean: 25555     running std dev: 35002.9        running std err: 17501.4
 ```
+
+<a name = "Actor_mode_4"></a>
+
 ##### Mode 4
 
 Mode 4 makes a significant departure from the other modes. Here we recognise that even a very large *induced model* has too much `location` *entropy* to demonstrate convincingly that a *slice* topology can work in practice. Rather than adding the `location` *variable* to the *substrate* for *modelling* and hoping that the *alignments* with the lidar sensor data are enough to eliminate the *entropy*, we add `location` directly to the *slice* topology. That is, the vertices in our directed graph are now pairs of *slice* and `location` *variable*, and transitions occur if either the *slice* or the `location` has changed. We assume that the turtlebot always knows its `location`. This has the effect of mapping the topology much more closely to the physical configuration space. The goal *slice*-`location` set no longer needs to rely on the modal `location` in the *slice*, but is always exactly correct. The count of transitions in the shortest path from local *slice*-`location` to the global goal *slice*-`location` set becomes much more realistic, and the corresponding shortest-path neighbourhood now provides a useful basis for the actions.
