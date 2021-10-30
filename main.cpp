@@ -2853,8 +2853,8 @@ int main(int argc, char **argv)
 			
 			if (true)
 			{
-				activeB.frameUnderlyings = SizeSet{1,2,3};
-				activeB.frameHistorys = SizeSet{4,5};
+				activeB.frameUnderlyings = SizeList{1,2,3};
+				activeB.frameHistorys = SizeList{4,5};
 				activeB.framesVarsOffset[1][2] = 3;
 				activeB.framesVarsOffset[1][4] = 5;
 				activeB.framesVarsOffset[2][6] = 7;
@@ -4056,13 +4056,13 @@ int main(int argc, char **argv)
 		}
 		activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);
 		
-		activeA.frameUnderlyings.insert(frame01);
-		if (frame02) activeA.frameUnderlyings.insert(frame02);
-		if (frame03) activeA.frameUnderlyings.insert(frame03);
+		activeA.frameUnderlyings.push_back(frame01);
+		if (frame02) activeA.frameUnderlyings.push_back(frame02);
+		if (frame03) activeA.frameUnderlyings.push_back(frame03);
 		EVAL(activeA.frameUnderlyings);
-		if (self01) activeA.frameHistorys.insert(self01);
-		if (self02) activeA.frameHistorys.insert(self02);
-		if (self03) activeA.frameHistorys.insert(self03);
+		if (self01) activeA.frameHistorys.push_back(self01);
+		if (self02) activeA.frameHistorys.push_back(self02);
+		if (self03) activeA.frameHistorys.push_back(self03);
 		EVAL(activeA.frameHistorys);
 
 		bool ok = true;
@@ -4329,13 +4329,13 @@ int main(int argc, char **argv)
 		
 		{
 			auto& activeA = *level2.front();		
-			activeA.frameUnderlyings.insert(frame01);
-			if (frame02) activeA.frameUnderlyings.insert(frame02);
-			if (frame03) activeA.frameUnderlyings.insert(frame03);
+			activeA.frameUnderlyings.push_back(frame01);
+			if (frame02) activeA.frameUnderlyings.push_back(frame02);
+			if (frame03) activeA.frameUnderlyings.push_back(frame03);
 			EVAL(activeA.frameUnderlyings);
-			if (self01) activeA.frameHistorys.insert(self01);
-			if (self02) activeA.frameHistorys.insert(self02);
-			if (self03) activeA.frameHistorys.insert(self03);
+			if (self01) activeA.frameHistorys.push_back(self01);
+			if (self02) activeA.frameHistorys.push_back(self02);
+			if (self03) activeA.frameHistorys.push_back(self03);
 			EVAL(activeA.frameHistorys);
 		}
 		
@@ -4707,8 +4707,8 @@ int main(int argc, char **argv)
 			
 			if (true)
 			{
-				activeB.frameUnderlyings = SizeSet{1,2,3};
-				activeB.frameHistorys = SizeSet{4,5};
+				activeB.frameUnderlyings = SizeList{1,2,3};
+				activeB.frameHistorys = SizeList{4,5};
 				activeB.framesVarsOffset[1][2] = 3;
 				activeB.framesVarsOffset[1][4] = 5;
 				activeB.framesVarsOffset[2][6] = 7;
