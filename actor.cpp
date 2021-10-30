@@ -1493,9 +1493,9 @@ Actor::Actor(const std::string& args_filename)
 				}
 				// activeA.eventsSparse = std::make_shared<ActiveEventsArray>(1);	
 				for (auto i : under[m])
-					activeA.frameUnderlyings.insert(i);
+					activeA.frameUnderlyings.push_back(i);
 				for (auto i : self[m])
-					activeA.frameHistorys.insert(i);
+					activeA.frameHistorys.push_back(i);
 				std::size_t sizeA = activeA.historyOverflow ? activeA.historySize : activeA.historyEvent;
 				if (sizeA)
 				{
