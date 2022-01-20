@@ -63,6 +63,8 @@ The `main` executable has various modes,
 cd ../TBOT02_ws
 ln -s ../TBOT02_build/main main
 
+./main
+
 ```
 <a name = "controller"></a>
 
@@ -204,6 +206,8 @@ To run the non-ros `main` executable, create a link,
 ```
 cd ~/turtlebot3_ws/src/TBOT02_ws
 ln -s ~/TBOT02_build/main main
+
+./main
 
 ```
 
